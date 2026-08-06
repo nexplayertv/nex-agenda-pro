@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { sair } from "@/app/(public)/login/actions";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SUPERADMIN_NAV = [
   { href: "/empresas", label: "Empresas" },
@@ -38,7 +39,8 @@ export default async function SuperadminLayout({ children }: { children: React.R
             </Link>
           ))}
         </nav>
-        <form action={sair} className="ml-auto">
+        <ThemeToggle />
+        <form action={sair} className="ml-2">
           <Button variant="ghost" size="sm" type="submit">
             <LogOut />
             Sair

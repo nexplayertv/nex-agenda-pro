@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePermissions } from "@/hooks/use-permissions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell, type NotificacaoResumo } from "./notification-bell";
 
 export function AppHeader({
@@ -50,6 +51,7 @@ export function AppHeader({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         {can("notificacoes", "visualizar") && (
           <NotificationBell notificacoes={notificacoes} naoLidas={naoLidas} />
         )}
