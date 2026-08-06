@@ -41,7 +41,7 @@ export async function confirmarPagamentoPix(
 
   const agora = new Date().toISOString();
 
-  await Promise.all([
+  const resultados = await Promise.all([
     supabase
       .from("pagamentos")
       .update({
@@ -78,6 +78,12 @@ export async function confirmarPagamentoPix(
       link: "/agenda",
     }),
   ]);
+
+  for (const resultado of resultados) {
+    if (resultado.error) {
+      console.error("confirmarPagamentoPix: falha parcial", resultado.error);
+    }
+  }
 
   await registrarAtividade({
     empresaId: ctx.empresaId,
