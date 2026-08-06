@@ -23,6 +23,7 @@ import {
   criarReservaPublica,
   type ReservaState,
 } from "@/app/(public)/agendar/[empresaSlug]/actions";
+import { AutomaticoPaymentStep } from "./automatico-payment-step";
 import { PixPaymentStep } from "./pix-payment-step";
 
 type Servico = {
@@ -38,6 +39,12 @@ type ChavePix = { chave: string; nomeTitular: string; nomeBanco: string; cidade:
 
 const initialState: ReservaState = { error: null };
 
+const GATEWAY_LABEL: Record<"asaas" | "stripe" | "mercadopago", string> = {
+  asaas: "Asaas",
+  stripe: "Stripe",
+  mercadopago: "Mercado Pago",
+};
+
 export function BookingFlow({
   empresaId,
   empresaSlug,
@@ -45,6 +52,7 @@ export function BookingFlow({
   servicos,
   profissionaisPorServico,
   percentualEntrada,
+  gatewayAutomaticoTipo,
   chavePix,
 }: {
   empresaId: string;
@@ -53,6 +61,7 @@ export function BookingFlow({
   servicos: Servico[];
   profissionaisPorServico: Record<string, Profissional[]>;
   percentualEntrada: number;
+  gatewayAutomaticoTipo: "asaas" | "stripe" | "mercadopago" | null;
   chavePix: ChavePix;
 }) {
   const [etapa, setEtapa] = useState<"servico" | "profissional" | "horario" | "dados">("servico");
@@ -92,6 +101,19 @@ export function BookingFlow({
   }, [state.agendamentoId, state.valorEntrada, chavePix]);
 
   const hoje = new Date().toISOString().slice(0, 10);
+
+  if (state.agendamentoId && state.gatewayAutomatico) {
+    return (
+      <AutomaticoPaymentStep
+        agendamentoId={state.agendamentoId}
+        empresaSlug={empresaSlug}
+        valorEntrada={valorEntrada}
+        pixCopiaECola={state.pixCopiaECola}
+        qrCodeBase64={state.qrCodeBase64}
+        urlPagamento={state.urlPagamento}
+      />
+    );
+  }
 
   if (state.agendamentoId && chavePix) {
     const pixCode = gerarPixCopiaECola({
@@ -262,6 +284,11 @@ export function BookingFlow({
                   <p>
                     Entrada ({percentualEntrada}%):{" "}
                     {formatarMoeda(Math.round(servico.valor * (percentualEntrada / 100) * 100) / 100)}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {gatewayAutomaticoTipo
+                      ? `Pagamento via Pix, confirmado automaticamente (${GATEWAY_LABEL[gatewayAutomaticoTipo]}).`
+                      : "Pagamento via Pix, confirmado manualmente pela empresa após o envio do comprovante."}
                   </p>
                 </div>
               )}

@@ -2,10 +2,35 @@
 
 import { revalidatePath } from "next/cache";
 import { getSlotsDisponiveis } from "@/lib/agenda/disponibilidade";
+import { AsaasGateway } from "@/lib/payments/asaas";
+import { descriptografarCredenciais } from "@/lib/payments/credentials";
+import type { PaymentGateway } from "@/lib/payments/gateway";
+import { MercadoPagoGateway } from "@/lib/payments/mercadopago";
+import { StripeGateway } from "@/lib/payments/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { iniciarReservaSchema } from "@/lib/validations/booking";
 
-export type ReservaState = { error: string | null; agendamentoId?: string; valorEntrada?: number };
+export type ReservaState = {
+  error: string | null;
+  agendamentoId?: string;
+  valorEntrada?: number;
+  gatewayAutomatico?: boolean;
+  pixCopiaECola?: string;
+  qrCodeBase64?: string;
+  urlPagamento?: string;
+};
+
+function instanciarGateway(
+  tipo: "asaas" | "stripe" | "mercadopago",
+  apiKey: string,
+  ambiente: string
+): PaymentGateway {
+  if (tipo === "asaas") {
+    return new AsaasGateway(apiKey, ambiente === "producao" ? "https://api.asaas.com/v3" : undefined);
+  }
+  if (tipo === "stripe") return new StripeGateway(apiKey);
+  return new MercadoPagoGateway(apiKey);
+}
 
 export async function buscarSlotsPublicoAction(
   empresaId: string,
@@ -64,23 +89,33 @@ export async function criarReservaPublica(
     observacoes,
   } = parsed.data;
 
-  const [{ data: servico }, { data: config }, { data: gatewayPix }] = await Promise.all([
-    supabase.from("servicos").select("valor, duracao_minutos").eq("id", servicoId).single(),
-    supabase
-      .from("configuracoes_empresas")
-      .select("percentual_entrada, prazo_comprovante_minutos")
-      .eq("empresa_id", empresaId)
-      .single(),
-    supabase
-      .from("gateways_empresas")
-      .select("status")
-      .eq("empresa_id", empresaId)
-      .eq("tipo", "pix_proprio")
-      .maybeSingle(),
-  ]);
+  const [{ data: servico }, { data: config }, { data: gatewayPix }, { data: gatewayAutomatico }] =
+    await Promise.all([
+      supabase.from("servicos").select("nome, valor, duracao_minutos").eq("id", servicoId).single(),
+      supabase
+        .from("configuracoes_empresas")
+        .select("percentual_entrada, prazo_reserva_minutos, prazo_comprovante_minutos")
+        .eq("empresa_id", empresaId)
+        .single(),
+      supabase
+        .from("gateways_empresas")
+        .select("status")
+        .eq("empresa_id", empresaId)
+        .eq("tipo", "pix_proprio")
+        .maybeSingle(),
+      supabase
+        .from("gateways_empresas")
+        .select("id, tipo, ambiente")
+        .eq("empresa_id", empresaId)
+        .eq("principal", true)
+        .eq("status", "ativo")
+        .in("tipo", ["asaas", "stripe", "mercadopago"])
+        .maybeSingle(),
+    ]);
 
   if (!servico || !config) return { error: "Serviço não encontrado." };
-  if (!gatewayPix || gatewayPix.status !== "ativo") {
+  const usarGatewayAutomatico = !!gatewayAutomatico;
+  if (!usarGatewayAutomatico && (!gatewayPix || gatewayPix.status !== "ativo")) {
     return { error: "Nenhuma forma de pagamento está configurada. Entre em contato com a empresa." };
   }
 
@@ -132,12 +167,12 @@ export async function criarReservaPublica(
       data,
       hora_inicio: horaInicio,
       hora_fim: horaFim,
-      status: "aguardando_comprovante",
+      status: usarGatewayAutomatico ? "aguardando_pagamento" : "aguardando_comprovante",
       valor_total: valorTotal,
       percentual_entrada_aplicado: percentual,
       valor_entrada: valorEntrada,
       valor_restante: valorRestante,
-      forma_pagamento: "pix_proprio",
+      forma_pagamento: usarGatewayAutomatico ? gatewayAutomatico!.tipo : "pix_proprio",
       origem: "publico",
       observacoes: observacoes || null,
     })
@@ -148,7 +183,10 @@ export async function criarReservaPublica(
     return { error: "Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário." };
   }
 
-  const expiraEm = new Date(Date.now() + config.prazo_comprovante_minutos * 60_000).toISOString();
+  const prazoMinutos = usarGatewayAutomatico
+    ? config.prazo_reserva_minutos
+    : config.prazo_comprovante_minutos;
+  const expiraEm = new Date(Date.now() + prazoMinutos * 60_000).toISOString();
 
   await supabase.from("reservas_temporarias").insert({
     empresa_id: empresaId,
@@ -157,26 +195,106 @@ export async function criarReservaPublica(
     status: "ativa",
   });
 
-  await supabase.from("pagamentos").insert({
-    empresa_id: empresaId,
-    agendamento_id: agendamento.id,
-    tipo: "entrada",
-    valor: valorEntrada,
-    forma_pagamento: "pix_proprio",
-    gateway: "pix_proprio",
-    status: "pendente",
-  });
+  const { data: pagamento } = await supabase
+    .from("pagamentos")
+    .insert({
+      empresa_id: empresaId,
+      agendamento_id: agendamento.id,
+      tipo: "entrada",
+      valor: valorEntrada,
+      forma_pagamento: usarGatewayAutomatico ? gatewayAutomatico!.tipo : "pix_proprio",
+      gateway: usarGatewayAutomatico ? gatewayAutomatico!.tipo : "pix_proprio",
+      status: "pendente",
+    })
+    .select("id")
+    .single();
+
+  if (usarGatewayAutomatico && gatewayAutomatico && pagamento) {
+    const { data: credencial } = await supabase
+      .from("credenciais_gateways")
+      .select("dados_criptografados")
+      .eq("gateway_empresa_id", gatewayAutomatico.id)
+      .maybeSingle();
+
+    if (!credencial) {
+      await cancelarPorFalhaNaCobranca(supabase, agendamento.id);
+      return { error: "Pagamento indisponível no momento. Entre em contato com a empresa." };
+    }
+
+    try {
+      const { apiKey } = descriptografarCredenciais(credencial.dados_criptografados);
+      const gateway = instanciarGateway(
+        gatewayAutomatico.tipo as "asaas" | "stripe" | "mercadopago",
+        apiKey,
+        gatewayAutomatico.ambiente
+      );
+      const cobranca = await gateway.criarCobranca({
+        valor: valorEntrada,
+        descricao: `Entrada - ${servico.nome}`,
+        clienteNome: nomeCliente,
+        clienteEmail: email || null,
+        clienteWhatsapp: whatsapp,
+        referenciaExterna: agendamento.id,
+      });
+
+      await supabase
+        .from("pagamentos")
+        .update({ transacao_id: cobranca.transacaoId })
+        .eq("id", pagamento.id);
+
+      await supabase.from("notificacoes").insert({
+        empresa_id: empresaId,
+        tipo: "nova_reserva_temporaria",
+        titulo: "Nova reserva pelo link público",
+        mensagem: `${nomeCliente} reservou um horário para ${data} às ${horaInicio}. Pagamento automático pendente.`,
+        link: "/agenda",
+      });
+
+      revalidatePath("/agenda");
+      return {
+        error: null,
+        agendamentoId: agendamento.id,
+        valorEntrada,
+        gatewayAutomatico: true,
+        pixCopiaECola: cobranca.pixCopiaECola,
+        qrCodeBase64: cobranca.qrCodeBase64,
+        urlPagamento: cobranca.urlPagamento,
+      };
+    } catch (error) {
+      console.error("criarReservaPublica: falha ao criar cobrança", error);
+      await cancelarPorFalhaNaCobranca(supabase, agendamento.id);
+      return { error: "Não foi possível gerar o pagamento agora. Tente novamente em instantes." };
+    }
+  }
 
   await supabase.from("notificacoes").insert({
     empresa_id: empresaId,
     tipo: "nova_reserva_temporaria",
     titulo: "Nova reserva pelo link público",
-    mensagem: `${nomeCliente} reservou ${servico ? "um horário" : ""} para ${data} às ${horaInicio}. Aguardando comprovante Pix.`,
+    mensagem: `${nomeCliente} reservou um horário para ${data} às ${horaInicio}. Aguardando comprovante Pix.`,
     link: "/pagamentos-entrada",
   });
 
   revalidatePath("/agenda");
   return { error: null, agendamentoId: agendamento.id, valorEntrada };
+}
+
+async function cancelarPorFalhaNaCobranca(
+  supabase: ReturnType<typeof createServiceClient>,
+  agendamentoId: string
+): Promise<void> {
+  await supabase
+    .from("agendamentos")
+    .update({ status: "cancelado", cancelado_motivo: "Falha ao gerar cobrança" })
+    .eq("id", agendamentoId);
+  await supabase
+    .from("reservas_temporarias")
+    .update({ status: "cancelada" })
+    .eq("agendamento_id", agendamentoId);
+  await supabase
+    .from("pagamentos")
+    .update({ status: "cancelado" })
+    .eq("agendamento_id", agendamentoId);
 }
 
 export async function enviarComprovanteAction(

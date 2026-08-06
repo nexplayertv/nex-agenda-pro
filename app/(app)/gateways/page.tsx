@@ -31,14 +31,24 @@ export default async function GatewaysPage() {
   const pix = gateways?.find((g) => g.tipo === "pix_proprio");
   const asaas = gateways?.find((g) => g.tipo === "asaas");
   const stripe = gateways?.find((g) => g.tipo === "stripe");
+  const mercadopago = gateways?.find((g) => g.tipo === "mercadopago");
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Gateways de pagamento"
-        description="Configure como sua empresa recebe o pagamento da entrada. No máximo um gateway automático (Asaas ou Stripe) pode ser o principal."
+        description="Configure como sua empresa recebe o pagamento da entrada. No máximo um gateway automático (Asaas, Stripe ou Mercado Pago) pode ser o principal."
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <GatewayAutomaticoCard
+          tipo="mercadopago"
+          nome="Mercado Pago"
+          descricao="Pix confirmado automaticamente via Mercado Pago."
+          status={mercadopago?.status ?? "nao_configurado"}
+          ambiente={mercadopago?.ambiente ?? "sandbox"}
+          principal={mercadopago?.principal ?? false}
+          temCredencial={mercadopago ? credenciaisSet.has(mercadopago.id) : false}
+        />
         <GatewayAutomaticoCard
           tipo="asaas"
           nome="Asaas"

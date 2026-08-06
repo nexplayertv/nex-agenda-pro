@@ -26,9 +26,16 @@ import {
   salvarCredencialGateway,
   testarConexaoGateway,
   type ActionState,
+  type GatewayAutomaticoTipo,
 } from "@/app/(app)/gateways/actions";
 
 const initialState: ActionState = { error: null };
+
+const LABEL_CHAVE: Record<GatewayAutomaticoTipo, string> = {
+  asaas: "Chave de API (access_token)",
+  stripe: "Chave secreta (sk_...)",
+  mercadopago: "Access Token (APP_USR-... ou TEST-...)",
+};
 
 export function GatewayAutomaticoCard({
   tipo,
@@ -39,7 +46,7 @@ export function GatewayAutomaticoCard({
   principal,
   temCredencial,
 }: {
-  tipo: "asaas" | "stripe";
+  tipo: GatewayAutomaticoTipo;
   nome: string;
   descricao: string;
   status: string;
@@ -85,9 +92,7 @@ export function GatewayAutomaticoCard({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor={`apiKey-${tipo}`}>
-              {tipo === "asaas" ? "Chave de API (access_token)" : "Chave secreta (sk_...)"}
-            </Label>
+            <Label htmlFor={`apiKey-${tipo}`}>{LABEL_CHAVE[tipo]}</Label>
             <Input id={`apiKey-${tipo}`} name="apiKey" type="password" placeholder="••••••••" />
           </div>
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}

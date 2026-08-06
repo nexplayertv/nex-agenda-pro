@@ -20,7 +20,7 @@ export default async function AgendarPage({
 
   if (!empresa || !empresa.ativa) notFound();
 
-  const [{ data: config }, { data: servicos }, { data: gatewayPix }, { data: chavePix }] =
+  const [{ data: config }, { data: servicos }, { data: gatewayPix }, { data: chavePix }, { data: gatewayAutomatico }] =
     await Promise.all([
       supabase
         .from("configuracoes_empresas")
@@ -47,6 +47,17 @@ export default async function AgendarPage({
         .select("chave, nome_titular, nome_banco, cidade_recebedor")
         .eq("empresa_id", empresa.id)
         .eq("status", "ativo")
+        .maybeSingle(),
+      // So um gateway automatico pode ser "principal" por vez (regra
+      // aplicada em app/(app)/gateways/actions.ts) - se houver um ativo,
+      // ele tem prioridade sobre o Pix proprio no checkout do cliente.
+      supabase
+        .from("gateways_empresas")
+        .select("tipo")
+        .eq("empresa_id", empresa.id)
+        .eq("principal", true)
+        .eq("status", "ativo")
+        .in("tipo", ["asaas", "stripe", "mercadopago"])
         .maybeSingle(),
     ]);
 
@@ -77,7 +88,9 @@ export default async function AgendarPage({
       .filter((p): p is NonNullable<typeof p> => !!p && p.status === "ativo");
   }
 
-  const pixAtivo = gatewayPix?.status === "ativo" && chavePix;
+  const usarGatewayAutomatico = !!gatewayAutomatico;
+  const pixAtivo = !usarGatewayAutomatico && gatewayPix?.status === "ativo" && !!chavePix;
+  const pagamentoDisponivel = usarGatewayAutomatico || pixAtivo;
 
   return (
     <div className="mx-auto max-w-lg space-y-6 py-8">
@@ -87,7 +100,7 @@ export default async function AgendarPage({
         {config?.endereco && <p className="text-xs text-muted-foreground">{config.endereco}</p>}
       </div>
 
-      {!pixAtivo && (
+      {!pagamentoDisponivel && (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
             Nenhuma forma de pagamento está configurada no momento. Entre em contato com{" "}
@@ -96,7 +109,7 @@ export default async function AgendarPage({
         </Card>
       )}
 
-      {pixAtivo && servicosFormatados.length > 0 && (
+      {pagamentoDisponivel && servicosFormatados.length > 0 && (
         <BookingFlow
           empresaId={empresa.id}
           empresaSlug={empresaSlug}
@@ -104,16 +117,21 @@ export default async function AgendarPage({
           servicos={servicosFormatados}
           profissionaisPorServico={profissionaisPorServico}
           percentualEntrada={config.percentual_entrada}
-          chavePix={{
-            chave: chavePix!.chave,
-            nomeTitular: chavePix!.nome_titular,
-            nomeBanco: chavePix!.nome_banco,
-            cidade: chavePix!.cidade_recebedor,
-          }}
+          gatewayAutomaticoTipo={usarGatewayAutomatico ? gatewayAutomatico!.tipo : null}
+          chavePix={
+            pixAtivo
+              ? {
+                  chave: chavePix!.chave,
+                  nomeTitular: chavePix!.nome_titular,
+                  nomeBanco: chavePix!.nome_banco,
+                  cidade: chavePix!.cidade_recebedor,
+                }
+              : null
+          }
         />
       )}
 
-      {pixAtivo && servicosFormatados.length === 0 && (
+      {pagamentoDisponivel && servicosFormatados.length === 0 && (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
             Nenhum serviço disponível para agendamento no momento.

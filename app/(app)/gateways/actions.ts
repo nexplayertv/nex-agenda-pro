@@ -6,15 +6,17 @@ import { getAuthContext } from "@/lib/permissions/auth-context";
 import { requirePermission } from "@/lib/permissions/require-permission";
 import { AsaasGateway } from "@/lib/payments/asaas";
 import { descriptografarCredenciais, encriptarCredenciais } from "@/lib/payments/credentials";
+import { MercadoPagoGateway } from "@/lib/payments/mercadopago";
 import { StripeGateway } from "@/lib/payments/stripe";
 import { createClient } from "@/lib/supabase/server";
 
+export type GatewayAutomaticoTipo = "asaas" | "stripe" | "mercadopago";
 export type ActionState = { error: string | null; sucesso?: boolean };
 
 async function obterOuCriarGateway(
   supabase: Awaited<ReturnType<typeof createClient>>,
   empresaId: string,
-  tipo: "pix_proprio" | "asaas" | "stripe"
+  tipo: "pix_proprio" | GatewayAutomaticoTipo
 ) {
   const { data: existente } = await supabase
     .from("gateways_empresas")
@@ -120,7 +122,7 @@ export async function alternarPixAtivo(ativo: boolean): Promise<void> {
 }
 
 export async function salvarCredencialGateway(
-  tipo: "asaas" | "stripe",
+  tipo: GatewayAutomaticoTipo,
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -175,7 +177,7 @@ export async function salvarCredencialGateway(
 }
 
 export async function testarConexaoGateway(
-  tipo: "asaas" | "stripe"
+  tipo: GatewayAutomaticoTipo
 ): Promise<{ ok: boolean; mensagem: string }> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return { ok: false, mensagem: "Sessão inválida." };
@@ -204,7 +206,9 @@ export async function testarConexaoGateway(
   const instancia =
     tipo === "asaas"
       ? new AsaasGateway(apiKey, gateway.ambiente === "producao" ? "https://api.asaas.com/v3" : undefined)
-      : new StripeGateway(apiKey);
+      : tipo === "stripe"
+        ? new StripeGateway(apiKey)
+        : new MercadoPagoGateway(apiKey);
 
   const resultado = await instancia.testarConexao();
 
@@ -221,7 +225,7 @@ export async function testarConexaoGateway(
 }
 
 export async function definirGatewayPrincipal(
-  tipo: "asaas" | "stripe"
+  tipo: GatewayAutomaticoTipo
 ): Promise<{ error: string | null }> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return { error: "Sessão inválida." };
@@ -236,7 +240,7 @@ export async function definirGatewayPrincipal(
     .from("gateways_empresas")
     .update({ principal: false })
     .eq("empresa_id", ctx.empresaId)
-    .in("tipo", ["asaas", "stripe"]);
+    .in("tipo", ["asaas", "stripe", "mercadopago"]);
 
   const { error } = await supabase
     .from("gateways_empresas")
@@ -250,7 +254,7 @@ export async function definirGatewayPrincipal(
   return { error: null };
 }
 
-export async function desconectarGateway(tipo: "asaas" | "stripe"): Promise<void> {
+export async function desconectarGateway(tipo: GatewayAutomaticoTipo): Promise<void> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return;
 
