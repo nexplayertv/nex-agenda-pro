@@ -42,20 +42,21 @@ export async function salvarNegocio(
   const supabase = await createClient();
   const { nome, segmento, ...resto } = parsed.data;
 
-  const [{ error: erroEmpresa }, { error: erroConfig }] = await Promise.all([
-    supabase.from("empresas").update({ nome, segmento }).eq("id", ctx.empresaId),
-    supabase
-      .from("configuracoes_empresas")
-      .update({
-        descricao: resto.descricao || null,
-        telefone: resto.telefone || null,
-        whatsapp: resto.whatsapp || null,
-        email: resto.email || null,
-        endereco: resto.endereco || null,
-        redes_sociais: { instagram: resto.instagram || null, facebook: resto.facebook || null },
-      })
-      .eq("empresa_id", ctx.empresaId),
-  ]);
+  const { error: erroEmpresa } = await supabase
+    .from("empresas")
+    .update({ nome, segmento })
+    .eq("id", ctx.empresaId);
+  const { error: erroConfig } = await supabase
+    .from("configuracoes_empresas")
+    .update({
+      descricao: resto.descricao || null,
+      telefone: resto.telefone || null,
+      whatsapp: resto.whatsapp || null,
+      email: resto.email || null,
+      endereco: resto.endereco || null,
+      redes_sociais: { instagram: resto.instagram || null, facebook: resto.facebook || null },
+    })
+    .eq("empresa_id", ctx.empresaId);
 
   if (erroEmpresa || erroConfig) return { error: "Não foi possível salvar as informações." };
 

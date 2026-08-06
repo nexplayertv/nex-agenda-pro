@@ -21,25 +21,29 @@ export async function GET(request: NextRequest) {
     .lt("expira_em", agora);
 
   for (const reserva of expiradas ?? []) {
-    await Promise.all([
-      supabase.from("reservas_temporarias").update({ status: "expirada" }).eq("id", reserva.id),
-      supabase
-        .from("agendamentos")
-        .update({ status: "cancelado", cancelado_em: agora, cancelado_motivo: "Prazo de pagamento expirado" })
-        .eq("id", reserva.agendamento_id),
-      supabase
-        .from("pagamentos")
-        .update({ status: "expirado" })
-        .eq("agendamento_id", reserva.agendamento_id)
-        .eq("status", "pendente"),
-      supabase.from("notificacoes").insert({
-        empresa_id: reserva.empresa_id,
-        tipo: "pagamento_expirado",
-        titulo: "Reserva expirada",
-        mensagem: "Uma reserva temporária expirou sem pagamento e o horário foi liberado.",
-        link: "/agenda",
-      }),
-    ]);
+    // Sequencial de proposito - ver nota em pagamentos-entrada/actions.ts
+    // sobre escritas concorrentes na mesma instancia do client se perdendo.
+    await supabase.from("reservas_temporarias").update({ status: "expirada" }).eq("id", reserva.id);
+    await supabase
+      .from("agendamentos")
+      .update({
+        status: "cancelado",
+        cancelado_em: agora,
+        cancelado_motivo: "Prazo de pagamento expirado",
+      })
+      .eq("id", reserva.agendamento_id);
+    await supabase
+      .from("pagamentos")
+      .update({ status: "expirado" })
+      .eq("agendamento_id", reserva.agendamento_id)
+      .eq("status", "pendente");
+    await supabase.from("notificacoes").insert({
+      empresa_id: reserva.empresa_id,
+      tipo: "pagamento_expirado",
+      titulo: "Reserva expirada",
+      mensagem: "Uma reserva temporária expirou sem pagamento e o horário foi liberado.",
+      link: "/agenda",
+    });
   }
 
   return NextResponse.json({ expiradas: expiradas?.length ?? 0 });

@@ -41,48 +41,55 @@ export async function confirmarPagamentoPix(
 
   const agora = new Date().toISOString();
 
-  const resultados = await Promise.all([
-    supabase
-      .from("pagamentos")
-      .update({
-        status: "pago",
-        data_pagamento: agora,
-        confirmado_por: ctx.userId,
-        confirmado_em: agora,
-      })
-      .eq("id", pagamentoId),
-    supabase
-      .from("agendamentos")
-      .update({ status: "confirmado" })
-      .eq("id", pagamento.agendamento_id),
-    supabase
-      .from("reservas_temporarias")
-      .update({ status: "convertida" })
-      .eq("agendamento_id", pagamento.agendamento_id),
-    supabase.from("receitas").insert({
-      empresa_id: ctx.empresaId,
-      origem: "agendamento",
-      agendamento_id: pagamento.agendamento_id,
-      pagamento_id: pagamento.id,
-      categoria: "entrada",
-      descricao: "Entrada confirmada (Pix)",
-      valor: pagamento.valor,
-      forma_pagamento: pagamento.forma_pagamento,
-      criado_por: ctx.userId,
-    }),
-    supabase.from("notificacoes").insert({
-      empresa_id: ctx.empresaId,
-      tipo: "pagamento_aprovado",
-      titulo: "Pagamento confirmado",
-      mensagem: "Um pagamento de entrada foi confirmado e o agendamento está garantido.",
-      link: "/agenda",
-    }),
-  ]);
+  // Rodadas em sequencia (nao em Promise.all) de proposito: escritas
+  // concorrentes usando a mesma instancia do client server-side do
+  // Supabase estavam perdendo operacoes silenciosamente em producao.
+  const passos = [
+    () =>
+      supabase
+        .from("pagamentos")
+        .update({
+          status: "pago",
+          data_pagamento: agora,
+          confirmado_por: ctx.userId,
+          confirmado_em: agora,
+        })
+        .eq("id", pagamentoId),
+    () =>
+      supabase
+        .from("agendamentos")
+        .update({ status: "confirmado" })
+        .eq("id", pagamento.agendamento_id),
+    () =>
+      supabase
+        .from("reservas_temporarias")
+        .update({ status: "convertida" })
+        .eq("agendamento_id", pagamento.agendamento_id),
+    () =>
+      supabase.from("receitas").insert({
+        empresa_id: ctx.empresaId,
+        origem: "agendamento",
+        agendamento_id: pagamento.agendamento_id,
+        pagamento_id: pagamento.id,
+        categoria: "entrada",
+        descricao: "Entrada confirmada (Pix)",
+        valor: pagamento.valor,
+        forma_pagamento: pagamento.forma_pagamento,
+        criado_por: ctx.userId,
+      }),
+    () =>
+      supabase.from("notificacoes").insert({
+        empresa_id: ctx.empresaId,
+        tipo: "pagamento_aprovado",
+        titulo: "Pagamento confirmado",
+        mensagem: "Um pagamento de entrada foi confirmado e o agendamento está garantido.",
+        link: "/agenda",
+      }),
+  ];
 
-  for (const resultado of resultados) {
-    if (resultado.error) {
-      console.error("confirmarPagamentoPix: falha parcial", resultado.error);
-    }
+  for (const passo of passos) {
+    const { error } = await passo();
+    if (error) console.error("confirmarPagamentoPix: falha parcial", error);
   }
 
   await registrarAtividade({
@@ -127,24 +134,22 @@ export async function recusarComprovante(
     .limit(1)
     .single();
 
-  await Promise.all([
-    supabase.from("pagamentos").update({ status: "pendente" }).eq("id", pagamentoId),
-    supabase
-      .from("agendamentos")
-      .update({ status: "aguardando_comprovante" })
-      .eq("id", pagamento.agendamento_id),
-    comprovante
-      ? supabase
-          .from("comprovantes_pagamentos")
-          .update({
-            status: "recusado",
-            motivo_recusa: motivo || null,
-            analisado_por: ctx.userId,
-            analisado_em: new Date().toISOString(),
-          })
-          .eq("id", comprovante.id)
-      : Promise.resolve(),
-  ]);
+  await supabase.from("pagamentos").update({ status: "pendente" }).eq("id", pagamentoId);
+  await supabase
+    .from("agendamentos")
+    .update({ status: "aguardando_comprovante" })
+    .eq("id", pagamento.agendamento_id);
+  if (comprovante) {
+    await supabase
+      .from("comprovantes_pagamentos")
+      .update({
+        status: "recusado",
+        motivo_recusa: motivo || null,
+        analisado_por: ctx.userId,
+        analisado_em: new Date().toISOString(),
+      })
+      .eq("id", comprovante.id);
+  }
 
   await registrarAtividade({
     empresaId: ctx.empresaId,
@@ -167,17 +172,15 @@ export async function cancelarReservaExpirada(agendamentoId: string): Promise<vo
   await requirePermission(ctx.empresaId, "agendamentos", "cancelar");
 
   const supabase = await createClient();
-  await Promise.all([
-    supabase
-      .from("agendamentos")
-      .update({ status: "cancelado", cancelado_em: new Date().toISOString() })
-      .eq("id", agendamentoId)
-      .eq("empresa_id", ctx.empresaId),
-    supabase
-      .from("reservas_temporarias")
-      .update({ status: "cancelada" })
-      .eq("agendamento_id", agendamentoId),
-  ]);
+  await supabase
+    .from("agendamentos")
+    .update({ status: "cancelado", cancelado_em: new Date().toISOString() })
+    .eq("id", agendamentoId)
+    .eq("empresa_id", ctx.empresaId);
+  await supabase
+    .from("reservas_temporarias")
+    .update({ status: "cancelada" })
+    .eq("agendamento_id", agendamentoId);
 
   revalidatePath("/pagamentos-entrada");
 }
