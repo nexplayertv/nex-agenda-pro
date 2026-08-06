@@ -6,19 +6,28 @@ import { getAuthContext } from "@/lib/permissions/auth-context";
 import { requirePermission } from "@/lib/permissions/require-permission";
 import { createClient } from "@/lib/supabase/server";
 
-export async function obterUrlComprovante(caminho: string): Promise<string | null> {
+export async function obterUrlComprovante(
+  caminho: string
+): Promise<{ url: string | null; error: string | null }> {
   const ctx = await getAuthContext();
-  if (!ctx?.empresaId) return null;
+  if (!ctx?.empresaId) return { url: null, error: "Sessão inválida." };
 
-  await requirePermission(ctx.empresaId, "comprovantes_pix", "visualizar");
+  try {
+    await requirePermission(ctx.empresaId, "comprovantes_pix", "visualizar");
+  } catch {
+    return { url: null, error: "Você não tem permissão para ver comprovantes." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.storage
     .from("comprovantes")
     .createSignedUrl(caminho, 60 * 5);
 
-  if (error) return null;
-  return data.signedUrl;
+  if (error) {
+    console.error("obterUrlComprovante", error);
+    return { url: null, error: "Não foi possível abrir o comprovante. Tente novamente." };
+  }
+  return { url: data.signedUrl, error: null };
 }
 
 export async function confirmarPagamentoPix(

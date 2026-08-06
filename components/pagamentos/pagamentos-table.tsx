@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Check, FileText, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,12 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
   const [motivo, setMotivo] = useState("");
 
   async function verComprovante(caminho: string) {
-    const url = await obterUrlComprovante(caminho);
-    if (url) window.open(url, "_blank");
+    const resultado = await obterUrlComprovante(caminho);
+    if (resultado.error) {
+      toast.error(resultado.error);
+      return;
+    }
+    if (resultado.url) window.open(resultado.url, "_blank");
   }
 
   return (
