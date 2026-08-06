@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { LogOut, Search, User } from "lucide-react";
 import { sair } from "@/app/(public)/login/actions";
@@ -35,6 +36,7 @@ export function AppHeader({
   naoLidas: number;
 }) {
   const { can } = usePermissions();
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const iniciais = nome
     .split(" ")
@@ -80,7 +82,13 @@ export function AppHeader({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => startTransition(() => sair())}
+              onClick={() =>
+                startTransition(async () => {
+                  await sair();
+                  router.push("/login");
+                  router.refresh();
+                })
+              }
             >
               <LogOut />
               Sair

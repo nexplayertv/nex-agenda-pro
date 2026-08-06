@@ -87,5 +87,8 @@ export async function cadastrar(
 export async function sair(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  // Sem redirect() aqui de proposito: esta acao e chamada via onClick a
+  // partir de um menu (nao um <form>), e o redirect() do servidor nesse
+  // contexto nao e interceptado direito pelo client - quem navega e o
+  // componente que chama sair(), depois que a promise resolve.
 }

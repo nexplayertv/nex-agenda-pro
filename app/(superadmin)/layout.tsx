@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { getAuthContext } from "@/lib/permissions/auth-context";
-import { sair } from "@/app/(public)/login/actions";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SairButton } from "@/components/layout/sair-button";
 
 const SUPERADMIN_NAV = [
   { href: "/empresas", label: "Empresas" },
@@ -40,12 +39,7 @@ export default async function SuperadminLayout({ children }: { children: React.R
           ))}
         </nav>
         <ThemeToggle />
-        <form action={sair} className="ml-2">
-          <Button variant="ghost" size="sm" type="submit">
-            <LogOut />
-            Sair
-          </Button>
-        </form>
+        <SairButton className="ml-2" />
       </header>
       <main className="p-4 md:p-6">{children}</main>
     </div>
