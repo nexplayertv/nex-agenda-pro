@@ -84,6 +84,10 @@ export function AgendaToolbar({
       </div>
 
       <Select
+        items={{
+          todos: "Todos os profissionais",
+          ...Object.fromEntries(profissionais.map((p) => [p.id, p.nome])),
+        }}
         value={profissionalId || "todos"}
         onValueChange={(v) => atualizar({ profissionalId: v === "todos" ? "" : (v ?? "") })}
       >

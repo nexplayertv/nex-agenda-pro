@@ -70,7 +70,11 @@ export function GatewayAutomaticoCard({
         <form action={formAction} className="space-y-3">
           <div className="space-y-2">
             <Label>Ambiente</Label>
-            <Select name="ambiente" defaultValue={ambiente}>
+            <Select
+              items={{ sandbox: "Sandbox", producao: "Produção" }}
+              name="ambiente"
+              defaultValue={ambiente}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>

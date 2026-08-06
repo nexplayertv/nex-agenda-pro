@@ -109,7 +109,12 @@ export function LoginForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="segmento">Segmento</Label>
-                <Select name="segmento" defaultValue={SEGMENTOS[0].value} required>
+                <Select
+                  items={Object.fromEntries(SEGMENTOS.map((s) => [s.value, s.label]))}
+                  name="segmento"
+                  defaultValue={SEGMENTOS[0].value}
+                  required
+                >
                   <SelectTrigger id="segmento" className="w-full">
                     <SelectValue />
                   </SelectTrigger>

@@ -70,7 +70,13 @@ export function DesligarFuncionarioDialog({
               Este profissional tem <strong>{futuros}</strong> agendamento(s) futuro(s). Escolha o
               que fazer com eles:
             </p>
-            <Select value={transferirPara} onValueChange={(v) => setTransferirPara(v ?? "")}>
+            <Select
+              items={Object.fromEntries(
+                outrosProfissionais.map((p) => [p.id, `Transferir para ${p.nome}`])
+              )}
+              value={transferirPara}
+              onValueChange={(v) => setTransferirPara(v ?? "")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Manter como estão (não transferir)" />
               </SelectTrigger>

@@ -118,7 +118,13 @@ export function NovoAgendamentoForm({
             <h3 className="text-sm font-semibold">1. Cliente</h3>
             {!mostrarNovoCliente ? (
               <div className="flex gap-2">
-                <Select value={clienteId} onValueChange={(v) => setClienteId(v ?? "")}>
+                <Select
+                  items={Object.fromEntries(
+                    listaClientes.map((c) => [c.id, `${c.nome}${c.whatsapp ? ` · ${c.whatsapp}` : ""}`])
+                  )}
+                  value={clienteId}
+                  onValueChange={(v) => setClienteId(v ?? "")}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione um cliente" />
                   </SelectTrigger>
@@ -165,7 +171,13 @@ export function NovoAgendamentoForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Serviço</Label>
-                <Select value={servicoId} onValueChange={(v) => setServicoId(v ?? "")}>
+                <Select
+                  items={Object.fromEntries(
+                    servicos.map((s) => [s.id, `${s.nome} · ${formatarMoeda(s.valor)}`])
+                  )}
+                  value={servicoId}
+                  onValueChange={(v) => setServicoId(v ?? "")}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -180,7 +192,11 @@ export function NovoAgendamentoForm({
               </div>
               <div className="space-y-1">
                 <Label>Profissional</Label>
-                <Select value={profissionalId} onValueChange={(v) => setProfissionalId(v ?? "")}>
+                <Select
+                  items={Object.fromEntries(profissionais.map((p) => [p.id, p.nome]))}
+                  value={profissionalId}
+                  onValueChange={(v) => setProfissionalId(v ?? "")}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -253,6 +269,12 @@ export function NovoAgendamentoForm({
             <div className="space-y-1">
               <Label>Forma de pagamento</Label>
               <Select
+                items={{
+                  pix_proprio: "Pix",
+                  dinheiro: "Dinheiro",
+                  cartao_presencial: "Cartão (presencial)",
+                  outro: "Outro",
+                }}
                 name="formaPagamento"
                 value={formaPagamento}
                 onValueChange={(v) => setFormaPagamento(v ?? "pix_proprio")}

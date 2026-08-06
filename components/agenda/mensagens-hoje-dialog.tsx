@@ -98,7 +98,11 @@ export function MensagensHojeDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <Select value={templateId} onValueChange={(v) => setTemplateId(v ?? "")}>
+          <Select
+            items={Object.fromEntries(templates.map((t) => [t.id, TITULOS[t.tipo] ?? t.tipo]))}
+            value={templateId}
+            onValueChange={(v) => setTemplateId(v ?? "")}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione um template" />
             </SelectTrigger>

@@ -75,7 +75,12 @@ export function EditarFuncionarioDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="cargoId">Cargo</Label>
-              <Select name="cargoId" defaultValue={funcionario.cargo_id} required>
+              <Select
+                items={Object.fromEntries(cargos.map((c) => [c.id, c.nome]))}
+                name="cargoId"
+                defaultValue={funcionario.cargo_id}
+                required
+              >
                 <SelectTrigger id="cargoId" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -90,7 +95,11 @@ export function EditarFuncionarioDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="profissionalId">Profissional vinculado</Label>
-              <Select name="profissionalId" defaultValue={funcionario.profissional_id ?? ""}>
+              <Select
+                items={Object.fromEntries(profissionais.map((p) => [p.id, p.nome]))}
+                name="profissionalId"
+                defaultValue={funcionario.profissional_id ?? ""}
+              >
                 <SelectTrigger id="profissionalId" className="w-full">
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
@@ -105,7 +114,14 @@ export function EditarFuncionarioDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="escopoDados">Acesso aos dados</Label>
-              <Select name="escopoDados" defaultValue={funcionario.escopo_dados}>
+              <Select
+                items={{
+                  total: "Toda a empresa",
+                  proprio: "Somente os próprios agendamentos/clientes/comissão",
+                }}
+                name="escopoDados"
+                defaultValue={funcionario.escopo_dados}
+              >
                 <SelectTrigger id="escopoDados" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

@@ -72,7 +72,11 @@ export function ConvidarFuncionarioDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="cargoId">Cargo</Label>
-              <Select name="cargoId" required>
+              <Select
+                items={Object.fromEntries(cargos.map((c) => [c.id, c.nome]))}
+                name="cargoId"
+                required
+              >
                 <SelectTrigger id="cargoId" className="w-full">
                   <SelectValue placeholder="Selecione um cargo" />
                 </SelectTrigger>
@@ -87,7 +91,10 @@ export function ConvidarFuncionarioDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="profissionalId">Profissional vinculado (opcional)</Label>
-              <Select name="profissionalId">
+              <Select
+                items={Object.fromEntries(profissionais.map((p) => [p.id, p.nome]))}
+                name="profissionalId"
+              >
                 <SelectTrigger id="profissionalId" className="w-full">
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>

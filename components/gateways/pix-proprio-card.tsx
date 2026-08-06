@@ -74,7 +74,17 @@ export function PixProprioCard({
         <form action={formAction} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Tipo de chave</Label>
-            <Select name="tipoChave" defaultValue={chave?.tipo_chave ?? "aleatoria"}>
+            <Select
+              items={{
+                cpf: "CPF",
+                cnpj: "CNPJ",
+                email: "E-mail",
+                telefone: "Telefone",
+                aleatoria: "Chave aleatória",
+              }}
+              name="tipoChave"
+              defaultValue={chave?.tipo_chave ?? "aleatoria"}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -110,7 +120,11 @@ export function PixProprioCard({
           </div>
           <div className="space-y-2">
             <Label>Tipo de conta</Label>
-            <Select name="contaTipo" defaultValue={chave?.conta_tipo ?? "pessoal"}>
+            <Select
+              items={{ pessoal: "Pessoal", empresarial: "Empresarial" }}
+              name="contaTipo"
+              defaultValue={chave?.conta_tipo ?? "pessoal"}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>

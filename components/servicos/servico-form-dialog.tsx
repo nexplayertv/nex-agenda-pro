@@ -113,6 +113,7 @@ export function ServicoFormDialog({
               <input type="hidden" name="categoriaId" value={categoriaId} />
               <div className="flex gap-2">
                 <Select
+                  items={Object.fromEntries(listaCategorias.map((c) => [c.id, c.nome]))}
                   value={categoriaId}
                   onValueChange={(value) => setCategoriaId(value ?? "")}
                 >

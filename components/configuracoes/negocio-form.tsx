@@ -49,7 +49,11 @@ export function NegocioForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="segmento">Segmento</Label>
-          <Select name="segmento" defaultValue={segmento}>
+          <Select
+            items={Object.fromEntries(SEGMENTOS.map((s) => [s.value, s.label]))}
+            name="segmento"
+            defaultValue={segmento}
+          >
             <SelectTrigger id="segmento" className="w-full">
               <SelectValue />
             </SelectTrigger>
