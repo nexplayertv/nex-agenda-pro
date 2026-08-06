@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { LogOut, Search, User } from "lucide-react";
+import { LogOut, Search, Shield, User } from "lucide-react";
 import { sair } from "@/app/(public)/login/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ export function AppHeader({
   notificacoes: NotificacaoResumo[];
   naoLidas: number;
 }) {
-  const { can } = usePermissions();
+  const { can, isSuperadmin } = usePermissions();
   const router = useRouter();
   const [, startTransition] = useTransition();
   const iniciais = nome
@@ -78,6 +78,16 @@ export function AppHeader({
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/configuracoes">Configurações</Link>} />
+            {isSuperadmin && (
+              <DropdownMenuItem
+                render={
+                  <Link href="/empresas">
+                    <Shield />
+                    Painel da plataforma
+                  </Link>
+                }
+              />
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"

@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Store } from "lucide-react";
 import Link from "next/link";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { SairButton } from "@/components/layout/sair-button";
 
 const SUPERADMIN_NAV = [
@@ -39,7 +40,15 @@ export default async function SuperadminLayout({ children }: { children: React.R
           ))}
         </nav>
         <ThemeToggle />
-        <SairButton className="ml-2" />
+        {ctx.empresaId && (
+          <Button variant="outline" size="sm" render={
+            <Link href="/dashboard">
+              <Store />
+              Minha empresa
+            </Link>
+          } />
+        )}
+        <SairButton />
       </header>
       <main className="p-4 md:p-6">{children}</main>
     </div>
