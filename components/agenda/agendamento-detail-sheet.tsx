@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { MessageCircle, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MessageCircle, Pencil, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import {
   iniciarAtendimento,
   marcarNaoCompareceu,
 } from "@/app/(app)/agendamentos/actions";
+import { EditarAgendamentoDialog } from "./editar-agendamento-dialog";
 import type { AgendamentoAgenda } from "./types";
 
 function whatsappLink(numero: string) {
@@ -32,16 +34,20 @@ function whatsappLink(numero: string) {
 
 export function AgendamentoDetailSheet({
   agendamento,
+  profissionais,
   open,
   onOpenChange,
 }: {
   agendamento: AgendamentoAgenda | null;
+  profissionais: { id: string; nome: string }[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [mostrarCancelamento, setMostrarCancelamento] = useState(false);
+  const [editando, setEditando] = useState(false);
 
   if (!agendamento) return null;
   const statusMeta = STATUS_AGENDAMENTO_META[agendamento.status];
@@ -54,6 +60,7 @@ export function AgendamentoDetailSheet({
   }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader>
@@ -159,6 +166,16 @@ export function AgendamentoDetailSheet({
         </div>
 
         <SheetFooter className="flex-row flex-wrap gap-2">
+          <Can recurso="agendamentos" acao="editar">
+            {!["finalizado", "cancelado", "nao_compareceu", "reembolsado"].includes(
+              agendamento.status
+            ) && (
+              <Button size="sm" variant="outline" onClick={() => setEditando(true)}>
+                <Pencil />
+                Editar
+              </Button>
+            )}
+          </Can>
           <Can recurso="agendamentos" acao="confirmar">
             {["aguardando_pagamento", "aguardando_comprovante", "pagamento_em_analise"].includes(
               agendamento.status
@@ -217,5 +234,17 @@ export function AgendamentoDetailSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+      <EditarAgendamentoDialog
+        agendamento={agendamento}
+        profissionais={profissionais}
+        open={editando}
+        onOpenChange={setEditando}
+        onSalvo={() => {
+          router.refresh();
+          onOpenChange(false);
+        }}
+      />
+    </>
   );
 }

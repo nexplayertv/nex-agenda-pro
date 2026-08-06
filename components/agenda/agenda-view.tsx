@@ -48,10 +48,12 @@ export function AgendaView({
   view,
   data,
   agendamentos,
+  profissionais,
 }: {
   view: "dia" | "semana" | "mes" | "lista";
   data: string;
   agendamentos: AgendamentoAgenda[];
+  profissionais: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const [selecionado, setSelecionado] = useState<AgendamentoAgenda | null>(null);
@@ -79,7 +81,12 @@ export function AgendaView({
             onClick={() => abrir(a)}
           />
         ))}
-        <AgendamentoDetailSheet agendamento={selecionado} open={open} onOpenChange={setOpen} />
+        <AgendamentoDetailSheet
+          agendamento={selecionado}
+          profissionais={profissionais}
+          open={open}
+          onOpenChange={setOpen}
+        />
       </div>
     );
   }
@@ -118,7 +125,12 @@ export function AgendaView({
             </div>
           </div>
         ))}
-        <AgendamentoDetailSheet agendamento={selecionado} open={open} onOpenChange={setOpen} />
+        <AgendamentoDetailSheet
+          agendamento={selecionado}
+          profissionais={profissionais}
+          open={open}
+          onOpenChange={setOpen}
+        />
       </div>
     );
   }

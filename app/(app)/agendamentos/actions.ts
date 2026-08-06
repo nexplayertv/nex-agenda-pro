@@ -219,6 +219,86 @@ export async function criarAgendamento(
   return { error: null, sucesso: true };
 }
 
+export async function editarAgendamento(
+  agendamentoId: string,
+  params: { profissionalId: string; data: string; horaInicio: string; observacoes: string }
+): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "agendamentos", "editar");
+
+  const supabase = await createClient();
+  const { data: atual } = await supabase
+    .from("agendamentos")
+    .select("profissional_id, data, hora_inicio, hora_fim, servico_id")
+    .eq("id", agendamentoId)
+    .eq("empresa_id", ctx.empresaId)
+    .single();
+
+  if (!atual) return { error: "Agendamento não encontrado." };
+
+  const mudouHorario =
+    atual.profissional_id !== params.profissionalId ||
+    atual.data !== params.data ||
+    atual.hora_inicio.slice(0, 5) !== params.horaInicio;
+
+  let horaFim = atual.hora_fim;
+
+  if (mudouHorario) {
+    const { data: servico } = await supabase
+      .from("servicos")
+      .select("duracao_minutos")
+      .eq("id", atual.servico_id)
+      .single();
+    if (!servico) return { error: "Serviço não encontrado." };
+
+    const slots = await getSlotsDisponiveis(supabase, {
+      empresaId: ctx.empresaId,
+      profissionalId: params.profissionalId,
+      data: params.data,
+      duracaoMinutos: servico.duracao_minutos,
+    });
+    if (!slots.includes(params.horaInicio)) {
+      return { error: "Esse horário não está disponível. Escolha outro." };
+    }
+    const [h, m] = params.horaInicio.split(":").map(Number);
+    const fimMinutos = h * 60 + m + servico.duracao_minutos;
+    horaFim = `${Math.floor(fimMinutos / 60)
+      .toString()
+      .padStart(2, "0")}:${(fimMinutos % 60).toString().padStart(2, "0")}`;
+  }
+
+  const { error } = await supabase
+    .from("agendamentos")
+    .update({
+      profissional_id: params.profissionalId,
+      data: params.data,
+      hora_inicio: params.horaInicio,
+      hora_fim: horaFim,
+      observacoes: params.observacoes || null,
+    })
+    .eq("id", agendamentoId)
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) {
+    return { error: "Não foi possível salvar. O horário pode ter sido ocupado nesse meio-tempo." };
+  }
+
+  await registrarAtividade({
+    empresaId: ctx.empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: ctx.cargoNome,
+    acao: "editar",
+    recurso: "agendamentos",
+    registroId: agendamentoId,
+    dadosNovos: params,
+  });
+
+  revalidatePath("/agenda");
+  return { error: null };
+}
+
 async function mudarStatus(
   agendamentoId: string,
   novoStatus: string,

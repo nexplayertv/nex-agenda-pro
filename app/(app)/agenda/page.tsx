@@ -142,7 +142,12 @@ export default async function AgendaPage({
         profissionalId={profissionalId}
       />
 
-      <AgendaView view={view} data={data} agendamentos={agendamentos} />
+      <AgendaView
+        view={view}
+        data={data}
+        agendamentos={agendamentos}
+        profissionais={profissionais ?? []}
+      />
     </div>
   );
 }
