@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTransition } from "react";
 import { LogOut, Search, User } from "lucide-react";
 import { sair } from "@/app/(public)/login/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +35,7 @@ export function AppHeader({
   naoLidas: number;
 }) {
   const { can } = usePermissions();
+  const [, startTransition] = useTransition();
   const iniciais = nome
     .split(" ")
     .slice(0, 2)
@@ -76,17 +78,13 @@ export function AppHeader({
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/configuracoes">Configurações</Link>} />
             <DropdownMenuSeparator />
-            <form action={sair}>
-              <DropdownMenuItem
-                variant="destructive"
-                render={
-                  <button type="submit" className="w-full">
-                    <LogOut />
-                    Sair
-                  </button>
-                }
-              />
-            </form>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => startTransition(() => sair())}
+            >
+              <LogOut />
+              Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
