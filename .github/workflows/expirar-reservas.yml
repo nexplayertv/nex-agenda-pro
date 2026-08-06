@@ -1,0 +1,21 @@
+name: Expirar reservas temporárias
+
+# Chama periodicamente o endpoint que libera reservas Pix (link publico)
+# vencidas sem comprovante - ver docs/setup.md e app/api/cron/expirar-reservas.
+# Precisa do secret CRON_SECRET configurado neste repositorio (Settings >
+# Secrets and variables > Actions), com o MESMO valor da variavel
+# CRON_SECRET configurada no Vercel.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  expirar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar endpoint de expiração
+        run: |
+          curl -sf -X GET "https://nex-agenda-pro.vercel.app/api/cron/expirar-reservas" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
