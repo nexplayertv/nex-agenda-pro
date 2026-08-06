@@ -46,12 +46,21 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
   const [motivo, setMotivo] = useState("");
 
   async function verComprovante(caminho: string) {
+    // Abre a aba já no clique (sincrono) para o navegador nao bloquear
+    // como pop-up - so depois, quando a URL assinada chega, e que
+    // trocamos o destino dela.
+    const aba = window.open("", "_blank");
     const resultado = await obterUrlComprovante(caminho);
     if (resultado.error) {
+      aba?.close();
       toast.error(resultado.error);
       return;
     }
-    if (resultado.url) window.open(resultado.url, "_blank");
+    if (resultado.url && aba) {
+      aba.location.href = resultado.url;
+    } else if (resultado.url) {
+      window.open(resultado.url, "_blank");
+    }
   }
 
   return (
