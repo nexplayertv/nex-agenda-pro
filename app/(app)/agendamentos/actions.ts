@@ -190,6 +190,13 @@ export async function criarAgendamento(
         forma_pagamento: formaPagamento,
         criado_por: ctx.userId,
       });
+      await supabase.from("notificacoes").insert({
+        empresa_id: ctx.empresaId,
+        tipo: "pagamento_aprovado",
+        titulo: "Pagamento confirmado",
+        mensagem: "Um pagamento de entrada foi confirmado e o agendamento está garantido.",
+        link: "/agenda",
+      });
     }
   }
 
