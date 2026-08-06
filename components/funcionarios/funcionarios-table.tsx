@@ -129,7 +129,7 @@ export function FuncionariosTable({
                         profissionais={profissionais}
                         trigger={
                           <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
+                            closeOnClick={false}
                             render={
                               <button type="button" className="w-full">
                                 <Pencil />
@@ -147,7 +147,7 @@ export function FuncionariosTable({
                           usuarioId={f.usuario_id}
                           trigger={
                             <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
+                              closeOnClick={false}
                               render={
                                 <button type="button" className="w-full">
                                   <History />
@@ -232,7 +232,7 @@ export function FuncionariosTable({
                           trigger={
                             <DropdownMenuItem
                               variant="destructive"
-                              onSelect={(e) => e.preventDefault()}
+                              closeOnClick={false}
                               render={
                                 <button type="button" className="w-full">
                                   <UserX />

@@ -96,7 +96,7 @@ export function ProfissionaisTable({ profissionais }: { profissionais: Profissio
                         horarios={p.horarios_funcionamento}
                         trigger={
                           <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
+                            closeOnClick={false}
                             render={
                               <button type="button" className="w-full">
                                 <Pencil />

@@ -118,7 +118,7 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
                           cliente={cliente}
                           trigger={
                             <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
+                              closeOnClick={false}
                               render={
                                 <button type="button" className="w-full">
                                   <Pencil />
