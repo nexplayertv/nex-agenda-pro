@@ -128,6 +128,20 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
                       </Button>
                     </div>
                   )}
+                  {p.status === "pendente" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        startTransition(async () => {
+                          await confirmarPagamentoPix(p.id);
+                        })
+                      }
+                    >
+                      <Check />
+                      Marcar como pago
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );

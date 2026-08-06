@@ -161,7 +161,7 @@ export async function criarAgendamento(
     return { error: "Não foi possível criar o agendamento. O horário pode ter acabado de ser ocupado." };
   }
 
-  if (marcarComoPago && !liberarSemPagamento) {
+  if (!liberarSemPagamento) {
     const { data: pagamento } = await supabase
       .from("pagamentos")
       .insert({
@@ -170,25 +170,27 @@ export async function criarAgendamento(
         tipo: "entrada",
         valor: valorEntrada,
         forma_pagamento: formaPagamento,
-        status: "pago",
-        data_pagamento: new Date().toISOString(),
-        confirmado_por: ctx.userId,
-        confirmado_em: new Date().toISOString(),
+        status: marcarComoPago ? "pago" : "pendente",
+        data_pagamento: marcarComoPago ? new Date().toISOString() : null,
+        confirmado_por: marcarComoPago ? ctx.userId : null,
+        confirmado_em: marcarComoPago ? new Date().toISOString() : null,
       })
       .select("id")
       .single();
 
-    await supabase.from("receitas").insert({
-      empresa_id: ctx.empresaId,
-      origem: "agendamento",
-      agendamento_id: agendamento.id,
-      pagamento_id: pagamento?.id,
-      categoria: "entrada",
-      descricao: "Entrada do agendamento",
-      valor: valorEntrada,
-      forma_pagamento: formaPagamento,
-      criado_por: ctx.userId,
-    });
+    if (marcarComoPago) {
+      await supabase.from("receitas").insert({
+        empresa_id: ctx.empresaId,
+        origem: "agendamento",
+        agendamento_id: agendamento.id,
+        pagamento_id: pagamento?.id,
+        categoria: "entrada",
+        descricao: "Entrada do agendamento",
+        valor: valorEntrada,
+        forma_pagamento: formaPagamento,
+        criado_por: ctx.userId,
+      });
+    }
   }
 
   await registrarAtividade({
