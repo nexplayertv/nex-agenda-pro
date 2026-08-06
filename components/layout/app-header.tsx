@@ -11,7 +11,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -73,10 +72,10 @@ export function AppHeader({
             }
           />
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
+            <div className="px-1.5 py-1">
               <p className="text-sm font-medium">{nome}</p>
               <p className="text-xs text-muted-foreground">{email}</p>
-            </DropdownMenuLabel>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/configuracoes">Configurações</Link>} />
             <DropdownMenuSeparator />
