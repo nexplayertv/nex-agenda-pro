@@ -169,3 +169,40 @@ export async function criarCategoria(nome: string): Promise<{ id: string } | { e
   revalidatePath("/servicos");
   return { id: data.id };
 }
+
+export async function salvarProfissionaisServico(
+  servicoId: string,
+  profissionalIds: string[]
+): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "servicos", "editar");
+
+  const supabase = await createClient();
+
+  // Confirma que o servico e realmente da empresa antes de mexer no vinculo.
+  const { data: servico } = await supabase
+    .from("servicos")
+    .select("id")
+    .eq("id", servicoId)
+    .eq("empresa_id", ctx.empresaId)
+    .single();
+
+  if (!servico) return { error: "Serviço não encontrado." };
+
+  await supabase.from("profissionais_servicos").delete().eq("servico_id", servicoId);
+
+  if (profissionalIds.length > 0) {
+    const { error } = await supabase.from("profissionais_servicos").insert(
+      profissionalIds.map((profissionalId) => ({
+        servico_id: servicoId,
+        profissional_id: profissionalId,
+      }))
+    );
+    if (error) return { error: "Não foi possível salvar os profissionais habilitados." };
+  }
+
+  revalidatePath("/servicos");
+  return { error: null };
+}

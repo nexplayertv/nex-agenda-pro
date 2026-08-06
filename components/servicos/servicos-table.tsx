@@ -30,14 +30,17 @@ import {
 export type ServicoLinha = ServicoExistente & {
   status: "ativo" | "inativo";
   categorias_servicos: { nome: string } | null;
+  profissionais_servicos: { profissional_id: string }[];
 };
 
 export function ServicosTable({
   servicos,
   categorias,
+  profissionais,
 }: {
   servicos: ServicoLinha[];
   categorias: CategoriaOpcao[];
+  profissionais: { id: string; nome: string }[];
 }) {
   const [, startTransition] = useTransition();
 
@@ -100,8 +103,14 @@ export function ServicosTable({
                   <DropdownMenuContent align="end">
                     <Can recurso="servicos" acao="editar">
                       <ServicoFormDialog
-                        servico={servico}
+                        servico={{
+                          ...servico,
+                          profissionaisIds: servico.profissionais_servicos.map(
+                            (p) => p.profissional_id
+                          ),
+                        }}
                         categorias={categorias}
+                        profissionais={profissionais}
                         trigger={
                           <DropdownMenuItem
                             closeOnClick={false}

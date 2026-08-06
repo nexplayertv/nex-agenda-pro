@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCloseOnSuccess } from "@/hooks/use-close-on-success";
+import { ProfissionaisHabilitadosEditor } from "@/components/servicos/profissionais-habilitados-editor";
 import {
   criarCategoria,
   criarServico,
@@ -44,6 +45,7 @@ export type ServicoExistente = {
   destaque: boolean;
   visivel_catalogo: boolean;
   observacoes: string | null;
+  profissionaisIds?: string[];
 };
 
 const initialState: ActionState = { error: null };
@@ -51,10 +53,12 @@ const initialState: ActionState = { error: null };
 export function ServicoFormDialog({
   servico,
   categorias,
+  profissionais,
   trigger,
 }: {
   servico?: ServicoExistente;
   categorias: CategoriaOpcao[];
+  profissionais: { id: string; nome: string }[];
   trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -207,6 +211,20 @@ export function ServicoFormDialog({
             </Button>
           </DialogFooter>
         </form>
+
+        {servico && (
+          <div className="space-y-2 border-t pt-4">
+            <Label>Profissionais habilitados</Label>
+            <p className="text-xs text-muted-foreground">
+              Só profissionais marcados aqui aparecem para escolha no link público de agendamento.
+            </p>
+            <ProfissionaisHabilitadosEditor
+              servicoId={servico.id}
+              profissionais={profissionais}
+              selecionadosIniciais={servico.profissionaisIds ?? []}
+            />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -9,25 +9,34 @@ export default async function ServicosPage() {
   const ctx = await getAuthContext();
   let servicos: ServicoLinha[] = [];
   let categorias: { id: string; nome: string }[] = [];
+  let profissionais: { id: string; nome: string }[] = [];
 
   if (ctx?.empresaId) {
     const supabase = await createClient();
-    const [{ data: servicosData }, { data: categoriasData }] = await Promise.all([
-      supabase
-        .from("servicos")
-        .select(
-          "id, categoria_id, nome, descricao, valor, duracao_minutos, intervalo_minutos, destaque, visivel_catalogo, observacoes, status, categorias_servicos(nome)"
-        )
-        .eq("empresa_id", ctx.empresaId)
-        .order("ordem"),
-      supabase
-        .from("categorias_servicos")
-        .select("id, nome")
-        .eq("empresa_id", ctx.empresaId)
-        .order("ordem"),
-    ]);
+    const [{ data: servicosData }, { data: categoriasData }, { data: profissionaisData }] =
+      await Promise.all([
+        supabase
+          .from("servicos")
+          .select(
+            "id, categoria_id, nome, descricao, valor, duracao_minutos, intervalo_minutos, destaque, visivel_catalogo, observacoes, status, categorias_servicos(nome), profissionais_servicos(profissional_id)"
+          )
+          .eq("empresa_id", ctx.empresaId)
+          .order("ordem"),
+        supabase
+          .from("categorias_servicos")
+          .select("id, nome")
+          .eq("empresa_id", ctx.empresaId)
+          .order("ordem"),
+        supabase
+          .from("profissionais")
+          .select("id, nome")
+          .eq("empresa_id", ctx.empresaId)
+          .eq("status", "ativo")
+          .order("nome"),
+      ]);
     servicos = (servicosData as unknown as ServicoLinha[] | null) ?? [];
     categorias = categoriasData ?? [];
+    profissionais = profissionaisData ?? [];
   }
 
   return (
@@ -37,11 +46,11 @@ export default async function ServicosPage() {
         description="Catálogo de serviços oferecidos, valores e duração."
         actions={
           <Can recurso="servicos" acao="criar">
-            <ServicoFormDialog categorias={categorias} />
+            <ServicoFormDialog categorias={categorias} profissionais={profissionais} />
           </Can>
         }
       />
-      <ServicosTable servicos={servicos} categorias={categorias} />
+      <ServicosTable servicos={servicos} categorias={categorias} profissionais={profissionais} />
     </div>
   );
 }
