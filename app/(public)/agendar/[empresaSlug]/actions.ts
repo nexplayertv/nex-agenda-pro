@@ -243,6 +243,100 @@ export async function enviarComprovanteAction(
   return { error: null };
 }
 
+function normalizarTexto(valor: string): string {
+  return valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ");
+}
+
+function telefonesCorrespondem(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  return a === b || a.endsWith(b) || b.endsWith(a);
+}
+
+export type AgendamentoClienteResumo = {
+  id: string;
+  data: string;
+  horaInicio: string;
+  status: string;
+  servicoNome: string;
+  profissionalNome: string;
+  valorTotal: number;
+  valorEntrada: number;
+};
+
+export async function buscarAgendamentosClienteAction(
+  empresaSlug: string,
+  nomeInformado: string,
+  telefoneInformado: string
+): Promise<{ error: string | null; agendamentos: AgendamentoClienteResumo[] }> {
+  const nome = nomeInformado.trim();
+  const digitosInformados = telefoneInformado.replace(/\D/g, "");
+
+  if (nome.length < 2 || digitosInformados.length < 8) {
+    return {
+      error: "Informe seu nome completo e o telefone usado no agendamento.",
+      agendamentos: [],
+    };
+  }
+
+  const supabase = createServiceClient();
+  const { data: empresa } = await supabase
+    .from("empresas")
+    .select("id")
+    .eq("slug", empresaSlug)
+    .single();
+
+  if (!empresa) return { error: "Empresa não encontrada.", agendamentos: [] };
+
+  const { data: clientes } = await supabase
+    .from("clientes")
+    .select("id, nome, whatsapp")
+    .eq("empresa_id", empresa.id);
+
+  const nomeNormalizado = normalizarTexto(nome);
+  const cliente = (clientes ?? []).find(
+    (c) =>
+      normalizarTexto(c.nome) === nomeNormalizado &&
+      telefonesCorrespondem((c.whatsapp ?? "").replace(/\D/g, ""), digitosInformados)
+  );
+
+  if (!cliente) {
+    return {
+      error: "Não encontramos nenhum agendamento com esse nome e telefone.",
+      agendamentos: [],
+    };
+  }
+
+  const { data: agendamentos } = await supabase
+    .from("agendamentos")
+    .select(
+      "id, data, hora_inicio, status, valor_total, valor_entrada, servicos(nome), profissionais(nome)"
+    )
+    .eq("empresa_id", empresa.id)
+    .eq("cliente_id", cliente.id)
+    .order("data", { ascending: false })
+    .order("hora_inicio", { ascending: false })
+    .limit(20);
+
+  return {
+    error: null,
+    agendamentos: (agendamentos ?? []).map((a) => ({
+      id: a.id,
+      data: a.data,
+      horaInicio: a.hora_inicio,
+      status: a.status,
+      servicoNome: (a.servicos as unknown as { nome: string } | null)?.nome ?? "—",
+      profissionalNome: (a.profissionais as unknown as { nome: string } | null)?.nome ?? "—",
+      valorTotal: Number(a.valor_total),
+      valorEntrada: Number(a.valor_entrada),
+    })),
+  };
+}
+
 export async function statusReservaAction(
   agendamentoId: string
 ): Promise<{ status: string; expiraEm: string | null } | null> {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -98,6 +99,7 @@ export default async function AgendarPage({
       {pixAtivo && servicosFormatados.length > 0 && (
         <BookingFlow
           empresaId={empresa.id}
+          empresaSlug={empresaSlug}
           empresaNome={empresa.nome}
           servicos={servicosFormatados}
           profissionaisPorServico={profissionaisPorServico}
@@ -124,6 +126,15 @@ export default async function AgendarPage({
           {config.politica_cancelamento}
         </p>
       )}
+
+      <div className="text-center">
+        <Link
+          href={`/agendar/${empresaSlug}/status`}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Já agendou? Consulte o status aqui
+        </Link>
+      </div>
     </div>
   );
 }

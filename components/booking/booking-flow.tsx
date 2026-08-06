@@ -40,6 +40,7 @@ const initialState: ReservaState = { error: null };
 
 export function BookingFlow({
   empresaId,
+  empresaSlug,
   empresaNome,
   servicos,
   profissionaisPorServico,
@@ -47,6 +48,7 @@ export function BookingFlow({
   chavePix,
 }: {
   empresaId: string;
+  empresaSlug: string;
   empresaNome: string;
   servicos: Servico[];
   profissionaisPorServico: Record<string, Profissional[]>;
@@ -102,6 +104,7 @@ export function BookingFlow({
     return (
       <PixPaymentStep
         agendamentoId={state.agendamentoId}
+        empresaSlug={empresaSlug}
         pixCopiaECola={pixCode}
         chavePix={chavePix.chave}
         nomeTitular={chavePix.nomeTitular}

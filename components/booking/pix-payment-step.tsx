@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { enviarComprovanteAction, statusReservaAction } from "@/app/(public)/age
 
 export function PixPaymentStep({
   agendamentoId,
+  empresaSlug,
   pixCopiaECola,
   chavePix,
   nomeTitular,
@@ -18,6 +20,7 @@ export function PixPaymentStep({
   qrCodeDataUrl,
 }: {
   agendamentoId: string;
+  empresaSlug: string;
   pixCopiaECola: string;
   chavePix: string;
   nomeTitular: string;
@@ -67,6 +70,12 @@ export function PixPaymentStep({
           <p className="text-sm text-muted-foreground">
             Seu pagamento foi confirmado e o horário está garantido.
           </p>
+          <Link
+            href={`/agendar/${empresaSlug}/status`}
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Consultar status depois
+          </Link>
         </CardContent>
       </Card>
     );
@@ -79,8 +88,15 @@ export function PixPaymentStep({
           <p className="text-lg font-semibold">Comprovante enviado!</p>
           <p className="text-sm text-muted-foreground">
             Assim que a empresa confirmar o pagamento, seu horário fica garantido. Esta página
-            atualiza automaticamente.
+            atualiza automaticamente. Se preferir fechar esta aba, você pode consultar o status
+            depois com seu nome e telefone.
           </p>
+          <Link
+            href={`/agendar/${empresaSlug}/status`}
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Consultar status depois
+          </Link>
         </CardContent>
       </Card>
     );
