@@ -9,6 +9,7 @@ import { descriptografarCredenciais, encriptarCredenciais } from "@/lib/payments
 import { MercadoPagoGateway } from "@/lib/payments/mercadopago";
 import { StripeGateway } from "@/lib/payments/stripe";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type GatewayAutomaticoTipo = "asaas" | "stripe" | "mercadopago";
 export type ActionState = { error: string | null; sucesso?: boolean };
@@ -141,22 +142,26 @@ export async function salvarCredencialGateway(
 
   const credenciaisCriptografadas = encriptarCredenciais({ apiKey });
 
-  const { data: existente } = await supabase
+  // credenciais_gateways nao tem nenhuma policy de RLS para authenticated
+  // (proposital - ver 0011_rls_policies.sql), entao so a service role
+  // consegue ler/escrever nela.
+  const supabaseService = createServiceClient();
+  const { data: existente } = await supabaseService
     .from("credenciais_gateways")
     .select("gateway_empresa_id")
     .eq("gateway_empresa_id", gatewayId)
     .maybeSingle();
 
-  if (existente) {
-    await supabase
-      .from("credenciais_gateways")
-      .update({ dados_criptografados: credenciaisCriptografadas })
-      .eq("gateway_empresa_id", gatewayId);
-  } else {
-    await supabase
-      .from("credenciais_gateways")
-      .insert({ gateway_empresa_id: gatewayId, dados_criptografados: credenciaisCriptografadas });
-  }
+  const { error: erroCredencial } = existente
+    ? await supabaseService
+        .from("credenciais_gateways")
+        .update({ dados_criptografados: credenciaisCriptografadas })
+        .eq("gateway_empresa_id", gatewayId)
+    : await supabaseService
+        .from("credenciais_gateways")
+        .insert({ gateway_empresa_id: gatewayId, dados_criptografados: credenciaisCriptografadas });
+
+  if (erroCredencial) return { error: "Não foi possível salvar a chave." };
 
   await supabase
     .from("gateways_empresas")
@@ -194,7 +199,7 @@ export async function testarConexaoGateway(
 
   if (!gateway) return { ok: false, mensagem: "Gateway ainda não configurado." };
 
-  const { data: credencial } = await supabase
+  const { data: credencial } = await createServiceClient()
     .from("credenciais_gateways")
     .select("dados_criptografados")
     .eq("gateway_empresa_id", gateway.id)
@@ -270,7 +275,7 @@ export async function desconectarGateway(tipo: GatewayAutomaticoTipo): Promise<v
 
   if (!gateway) return;
 
-  await supabase.from("credenciais_gateways").delete().eq("gateway_empresa_id", gateway.id);
+  await createServiceClient().from("credenciais_gateways").delete().eq("gateway_empresa_id", gateway.id);
   await supabase
     .from("gateways_empresas")
     .update({ status: "nao_configurado", principal: false })

@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { GatewayAutomaticoCard } from "@/components/gateways/gateway-automatico-card";
 import { PixProprioCard } from "@/components/gateways/pix-proprio-card";
 
@@ -18,9 +19,11 @@ export default async function GatewaysPage() {
   ]);
 
   const gatewayIds = (gateways ?? []).map((g) => g.id);
+  // credenciais_gateways nao tem policy de RLS para authenticated (proposital -
+  // ver 0011_rls_policies.sql), entao a leitura precisa da service role.
   const { data: credenciais } =
     gatewayIds.length > 0
-      ? await supabase
+      ? await createServiceClient()
           .from("credenciais_gateways")
           .select("gateway_empresa_id")
           .in("gateway_empresa_id", gatewayIds)
