@@ -69,6 +69,7 @@ export async function criarReservaPublica(
     nomeCliente: formData.get("nomeCliente"),
     whatsapp: formData.get("whatsapp"),
     email: formData.get("email") ?? "",
+    cpfCnpj: formData.get("cpfCnpj") ?? "",
     observacoes: formData.get("observacoes") ?? "",
     aceiteTermos: formData.get("aceiteTermos") === "true",
   });
@@ -86,6 +87,7 @@ export async function criarReservaPublica(
     nomeCliente,
     whatsapp,
     email,
+    cpfCnpj,
     observacoes,
   } = parsed.data;
 
@@ -117,6 +119,9 @@ export async function criarReservaPublica(
   const usarGatewayAutomatico = !!gatewayAutomatico;
   if (!usarGatewayAutomatico && (!gatewayPix || gatewayPix.status !== "ativo")) {
     return { error: "Nenhuma forma de pagamento está configurada. Entre em contato com a empresa." };
+  }
+  if (usarGatewayAutomatico && gatewayAutomatico!.tipo === "asaas" && !cpfCnpj) {
+    return { error: "Informe seu CPF ou CNPJ para gerar o pagamento." };
   }
 
   const slots = await getSlotsDisponiveis(supabase, {
@@ -234,6 +239,7 @@ export async function criarReservaPublica(
         clienteNome: nomeCliente,
         clienteEmail: email || null,
         clienteWhatsapp: whatsapp,
+        clienteCpfCnpj: cpfCnpj || null,
         referenciaExterna: agendamento.id,
       });
 

@@ -11,6 +11,7 @@ export type CriarCobrancaInput = {
   clienteNome: string;
   clienteEmail?: string | null;
   clienteWhatsapp?: string | null;
+  clienteCpfCnpj?: string | null;
   referenciaExterna: string; // agendamento_id
 };
 

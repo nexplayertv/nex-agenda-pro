@@ -8,6 +8,7 @@ export const iniciarReservaSchema = z.object({
   nomeCliente: z.string().trim().min(2, "Informe seu nome completo."),
   whatsapp: z.string().trim().min(8, "Informe um WhatsApp válido."),
   email: z.email("E-mail inválido.").optional().or(z.literal("")),
+  cpfCnpj: z.string().trim().optional().or(z.literal("")),
   observacoes: z.string().trim().optional().or(z.literal("")),
   aceiteTermos: z.boolean().refine((v) => v === true, {
     message: "É necessário aceitar os termos e a política de cancelamento.",

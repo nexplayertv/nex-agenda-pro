@@ -49,12 +49,15 @@ export class AsaasGateway implements PaymentGateway {
     );
     if (busca.data.length > 0) return busca.data[0].id;
 
+    // O Asaas exige CPF/CNPJ do cliente para emitir cobranca Pix - sem
+    // isso a API responde 400 "invalid_object".
     const criado = await this.request<{ id: string }>("/customers", {
       method: "POST",
       body: JSON.stringify({
         name: input.clienteNome,
         email: input.clienteEmail || undefined,
         mobilePhone: input.clienteWhatsapp || undefined,
+        cpfCnpj: input.clienteCpfCnpj?.replace(/\D/g, "") || undefined,
       }),
     });
     return criado.id;

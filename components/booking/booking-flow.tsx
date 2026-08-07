@@ -270,9 +270,18 @@ export function BookingFlow({
                 <Input id="whatsapp" name="whatsapp" required placeholder="(11) 90000-0000" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail (opcional)</Label>
-                <Input id="email" name="email" type="email" />
+                <Label htmlFor="email">E-mail {gatewayAutomaticoTipo === "asaas" ? "" : "(opcional)"}</Label>
+                <Input id="email" name="email" type="email" required={gatewayAutomaticoTipo === "asaas"} />
               </div>
+              {gatewayAutomaticoTipo === "asaas" && (
+                <div className="space-y-2">
+                  <Label htmlFor="cpfCnpj">CPF ou CNPJ</Label>
+                  <Input id="cpfCnpj" name="cpfCnpj" required placeholder="000.000.000-00" />
+                  <p className="text-xs text-muted-foreground">
+                    Necessário para gerar a cobrança Pix.
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea id="observacoes" name="observacoes" rows={2} />
