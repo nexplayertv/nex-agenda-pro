@@ -270,8 +270,8 @@ export function BookingFlow({
                 <Input id="whatsapp" name="whatsapp" required placeholder="(11) 90000-0000" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail {gatewayAutomaticoTipo === "asaas" ? "" : "(opcional)"}</Label>
-                <Input id="email" name="email" type="email" required={gatewayAutomaticoTipo === "asaas"} />
+                <Label htmlFor="email">E-mail (opcional)</Label>
+                <Input id="email" name="email" type="email" />
               </div>
               {gatewayAutomaticoTipo === "asaas" && (
                 <div className="space-y-2">
