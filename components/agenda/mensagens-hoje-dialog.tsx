@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { montarVariaveis, renderizarTemplate } from "@/lib/mensagens/template";
+import { montarVariaveis, renderizarTemplate, whatsappLink } from "@/lib/mensagens/template";
 import { registrarMensagemEnviada } from "@/app/(app)/mensagens/actions";
 import type { AgendamentoAgenda } from "./types";
 
@@ -32,10 +32,6 @@ const TITULOS: Record<string, string> = {
   valor_restante_pendente: "Valor restante pendente",
   agradecimento: "Agradecimento",
 };
-
-function whatsappLink(numero: string, texto: string) {
-  return `https://wa.me/55${numero.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`;
-}
 
 export function MensagensHojeDialog({
   agendamentosHoje,

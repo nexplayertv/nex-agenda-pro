@@ -44,16 +44,26 @@ function AgendamentoLinha({
   );
 }
 
+type TemplateInfo = { id: string; conteudo: string };
+
 export function AgendaView({
   view,
   data,
   agendamentos,
   profissionais,
+  templates,
+  empresaNome,
+  empresaEndereco,
+  empresaWhatsapp,
 }: {
   view: "dia" | "semana" | "mes" | "lista";
   data: string;
   agendamentos: AgendamentoAgenda[];
   profissionais: { id: string; nome: string }[];
+  templates: Record<string, TemplateInfo>;
+  empresaNome: string;
+  empresaEndereco: string | null;
+  empresaWhatsapp: string | null;
 }) {
   const router = useRouter();
   const [selecionado, setSelecionado] = useState<AgendamentoAgenda | null>(null);
@@ -86,6 +96,10 @@ export function AgendaView({
           profissionais={profissionais}
           open={open}
           onOpenChange={setOpen}
+          templates={templates}
+          empresaNome={empresaNome}
+          empresaEndereco={empresaEndereco}
+          empresaWhatsapp={empresaWhatsapp}
         />
       </div>
     );
@@ -130,6 +144,10 @@ export function AgendaView({
           profissionais={profissionais}
           open={open}
           onOpenChange={setOpen}
+          templates={templates}
+          empresaNome={empresaNome}
+          empresaEndereco={empresaEndereco}
+          empresaWhatsapp={empresaWhatsapp}
         />
       </div>
     );

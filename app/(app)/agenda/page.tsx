@@ -104,12 +104,24 @@ export default async function AgendaPage({
     agendamentosHoje = (agHoje as unknown as AgendamentoAgenda[] | null) ?? [];
   }
 
+  const TIPOS_MENSAGENS_HOJE = [
+    "confirmacao_agendamento",
+    "lembrete_mesmo_dia",
+    "valor_restante_pendente",
+    "agradecimento",
+  ];
+
   const { data: templatesData } = await supabase
     .from("templates_mensagens")
     .select("id, tipo, conteudo")
     .eq("empresa_id", ctx.empresaId)
-    .in("tipo", ["confirmacao_agendamento", "lembrete_mesmo_dia", "valor_restante_pendente", "agradecimento"]);
-  templates = templatesData ?? [];
+    .in("tipo", [...TIPOS_MENSAGENS_HOJE, "cancelamento", "nao_compareceu", "solicitacao_avaliacao"]);
+
+  const todosTemplates = templatesData ?? [];
+  templates = todosTemplates.filter((t) => TIPOS_MENSAGENS_HOJE.includes(t.tipo));
+  const templatesPorTipo = Object.fromEntries(
+    todosTemplates.map((t) => [t.tipo, { id: t.id, conteudo: t.conteudo }])
+  );
 
   return (
     <div className="space-y-6">
@@ -150,6 +162,10 @@ export default async function AgendaPage({
         data={data}
         agendamentos={agendamentos}
         profissionais={profissionais ?? []}
+        templates={templatesPorTipo}
+        empresaNome={empresa?.nome ?? ""}
+        empresaEndereco={config?.endereco ?? null}
+        empresaWhatsapp={config?.whatsapp ?? null}
       />
     </div>
   );

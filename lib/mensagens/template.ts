@@ -20,6 +20,11 @@ export function renderizarTemplate(conteudo: string, variaveis: VariaveisMensage
   });
 }
 
+export function whatsappLink(numero: string, texto?: string): string {
+  const base = `https://wa.me/55${numero.replace(/\D/g, "")}`;
+  return texto ? `${base}?text=${encodeURIComponent(texto)}` : base;
+}
+
 export function montarVariaveis(params: {
   nomeCliente: string;
   nomeEmpresa: string;

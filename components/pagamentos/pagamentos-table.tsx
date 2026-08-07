@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { STATUS_PAGAMENTO_META } from "@/lib/agenda/status";
 import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
+import { EnviarMensagemButton } from "@/components/mensagens/enviar-mensagem-button";
 import {
   confirmarPagamentoPix,
   obterUrlComprovante,
@@ -36,11 +37,35 @@ export type PagamentoLinha = {
   status: string;
   forma_pagamento: string;
   created_at: string;
-  agendamentos: { data: string; hora_inicio: string; clientes: { nome: string; whatsapp: string | null } | null } | null;
+  agendamentos: {
+    id: string;
+    data: string;
+    hora_inicio: string;
+    valor_total: number;
+    valor_entrada: number;
+    valor_restante: number;
+    clientes: { id: string; nome: string; whatsapp: string | null } | null;
+    profissionais: { nome: string } | null;
+    servicos: { nome: string } | null;
+  } | null;
   comprovantes_pagamentos: { arquivo_url: string; enviado_em: string }[];
 };
 
-export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }) {
+type TemplateInfo = { id: string; conteudo: string };
+
+export function PagamentosTable({
+  pagamentos,
+  templates,
+  empresaNome,
+  empresaWhatsapp,
+  empresaEndereco,
+}: {
+  pagamentos: PagamentoLinha[];
+  templates: Record<string, TemplateInfo>;
+  empresaNome: string;
+  empresaWhatsapp: string | null;
+  empresaEndereco: string | null;
+}) {
   const [, startTransition] = useTransition();
   const [recusando, setRecusando] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
@@ -87,6 +112,37 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
           {pagamentos.map((p) => {
             const comprovante = p.comprovantes_pagamentos?.[p.comprovantes_pagamentos.length - 1];
             const statusMeta = STATUS_PAGAMENTO_META[p.status];
+            const tipoTemplateAviso =
+              p.status === "pendente"
+                ? "pagamento_aguardando"
+                : p.status === "em_analise"
+                  ? "comprovante_recebido"
+                  : p.status === "pago"
+                    ? "pagamento_confirmado"
+                    : p.status === "recusado"
+                      ? "comprovante_recusado"
+                      : null;
+            const templateAviso = tipoTemplateAviso ? templates[tipoTemplateAviso] : undefined;
+            const botaoAviso = p.agendamentos && (
+              <EnviarMensagemButton
+                templateId={templateAviso?.id}
+                conteudo={templateAviso?.conteudo}
+                clienteId={p.agendamentos.clientes?.id ?? ""}
+                clienteNome={p.agendamentos.clientes?.nome ?? ""}
+                clienteWhatsapp={p.agendamentos.clientes?.whatsapp}
+                agendamentoId={p.agendamentos.id}
+                nomeProfissional={p.agendamentos.profissionais?.nome ?? ""}
+                servico={p.agendamentos.servicos?.nome ?? ""}
+                data={p.agendamentos.data}
+                horaInicio={p.agendamentos.hora_inicio}
+                valorTotal={p.agendamentos.valor_total}
+                valorEntrada={p.agendamentos.valor_entrada}
+                valorRestante={p.agendamentos.valor_restante}
+                empresaNome={empresaNome}
+                empresaEndereco={empresaEndereco}
+                empresaWhatsapp={empresaWhatsapp}
+              />
+            );
             return (
               <TableRow key={p.id}>
                 <TableCell>
@@ -123,10 +179,30 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
                   )}
                 </TableCell>
                 <TableCell>
-                  {p.status === "em_analise" && (
-                    <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {p.status === "em_analise" && (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            startTransition(async () => {
+                              await confirmarPagamentoPix(p.id);
+                            })
+                          }
+                        >
+                          <Check />
+                          Confirmar
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => setRecusando(p.id)}>
+                          <X />
+                          Recusar
+                        </Button>
+                      </>
+                    )}
+                    {p.status === "pendente" && (
                       <Button
                         size="sm"
+                        variant="outline"
                         onClick={() =>
                           startTransition(async () => {
                             await confirmarPagamentoPix(p.id);
@@ -134,28 +210,11 @@ export function PagamentosTable({ pagamentos }: { pagamentos: PagamentoLinha[] }
                         }
                       >
                         <Check />
-                        Confirmar
+                        Marcar como pago
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => setRecusando(p.id)}>
-                        <X />
-                        Recusar
-                      </Button>
-                    </div>
-                  )}
-                  {p.status === "pendente" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        startTransition(async () => {
-                          await confirmarPagamentoPix(p.id);
-                        })
-                      }
-                    >
-                      <Check />
-                      Marcar como pago
-                    </Button>
-                  )}
+                    )}
+                    {botaoAviso}
+                  </div>
                 </TableCell>
               </TableRow>
             );

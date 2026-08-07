@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Pencil, Users } from "lucide-react";
@@ -17,7 +17,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Can } from "@/hooks/use-permissions";
 import { STATUS_AGENDAMENTO_META } from "@/lib/agenda/status";
+import { whatsappLink } from "@/lib/mensagens/template";
 import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
+import { EnviarMensagemButton } from "@/components/mensagens/enviar-mensagem-button";
 import {
   cancelarAgendamento,
   confirmarAgendamento,
@@ -28,26 +30,37 @@ import {
 import { EditarAgendamentoDialog } from "./editar-agendamento-dialog";
 import type { AgendamentoAgenda } from "./types";
 
-function whatsappLink(numero: string) {
-  return `https://wa.me/55${numero.replace(/\D/g, "")}`;
-}
+type TemplateInfo = { id: string; conteudo: string };
 
 export function AgendamentoDetailSheet({
   agendamento,
   profissionais,
   open,
   onOpenChange,
+  templates,
+  empresaNome,
+  empresaEndereco,
+  empresaWhatsapp,
 }: {
   agendamento: AgendamentoAgenda | null;
   profissionais: { id: string; nome: string }[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  templates: Record<string, TemplateInfo>;
+  empresaNome: string;
+  empresaEndereco: string | null;
+  empresaWhatsapp: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [mostrarCancelamento, setMostrarCancelamento] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [avisoPosAcao, setAvisoPosAcao] = useState<string | null>(null);
+
+  useEffect(() => {
+    startTransition(() => setAvisoPosAcao(null));
+  }, [agendamento?.id]);
 
   if (!agendamento) return null;
   const statusMeta = STATUS_AGENDAMENTO_META[agendamento.status];
@@ -58,6 +71,36 @@ export function AgendamentoDetailSheet({
       onOpenChange(false);
     });
   }
+
+  function executarComAviso(acao: () => Promise<unknown>, tipoAviso: string) {
+    startTransition(async () => {
+      await acao();
+      router.refresh();
+      setAvisoPosAcao(tipoAviso);
+    });
+  }
+
+  const templateAviso = avisoPosAcao ? templates[avisoPosAcao] : undefined;
+  const botaoAviso = agendamento && avisoPosAcao && (
+    <EnviarMensagemButton
+      templateId={templateAviso?.id}
+      conteudo={templateAviso?.conteudo}
+      clienteId={agendamento.clientes?.id ?? ""}
+      clienteNome={agendamento.clientes?.nome ?? ""}
+      clienteWhatsapp={agendamento.clientes?.whatsapp}
+      agendamentoId={agendamento.id}
+      nomeProfissional={agendamento.profissionais?.nome ?? ""}
+      servico={agendamento.servicos?.nome ?? ""}
+      data={agendamento.data}
+      horaInicio={agendamento.hora_inicio}
+      valorTotal={agendamento.valor_total}
+      valorEntrada={agendamento.valor_entrada}
+      valorRestante={agendamento.valor_restante}
+      empresaNome={empresaNome}
+      empresaEndereco={empresaEndereco}
+      empresaWhatsapp={empresaWhatsapp}
+    />
+  );
 
   return (
     <>
@@ -156,11 +199,21 @@ export function AgendamentoDetailSheet({
                 size="sm"
                 disabled={pending}
                 onClick={() =>
-                  executar(() => cancelarAgendamento(agendamento.id, motivoCancelamento))
+                  executarComAviso(
+                    () => cancelarAgendamento(agendamento.id, motivoCancelamento),
+                    "cancelamento"
+                  )
                 }
               >
                 Confirmar cancelamento
               </Button>
+            </div>
+          )}
+
+          {avisoPosAcao && (
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-3">
+              <p className="flex-1 text-sm text-muted-foreground">Avisar o cliente?</p>
+              {botaoAviso}
             </div>
           )}
         </div>
@@ -201,7 +254,12 @@ export function AgendamentoDetailSheet({
               <Button
                 size="sm"
                 disabled={pending}
-                onClick={() => executar(() => finalizarAtendimento(agendamento.id))}
+                onClick={() =>
+                  executarComAviso(
+                    () => finalizarAtendimento(agendamento.id),
+                    "solicitacao_avaliacao"
+                  )
+                }
               >
                 Finalizar atendimento
               </Button>
@@ -211,7 +269,9 @@ export function AgendamentoDetailSheet({
                 size="sm"
                 variant="outline"
                 disabled={pending}
-                onClick={() => executar(() => marcarNaoCompareceu(agendamento.id))}
+                onClick={() =>
+                  executarComAviso(() => marcarNaoCompareceu(agendamento.id), "nao_compareceu")
+                }
               >
                 Não compareceu
               </Button>
