@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
-import { CreditCard, Unplug } from "lucide-react";
+import { useActionState, useEffect, useState, useTransition } from "react";
+import { Copy, CreditCard, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +37,12 @@ const LABEL_CHAVE: Record<GatewayAutomaticoTipo, string> = {
   mercadopago: "Access Token (APP_USR-... ou TEST-...)",
 };
 
+const WEBHOOK_DICA: Record<GatewayAutomaticoTipo, string> = {
+  asaas: "Cole em Integrações → Webhooks, no painel do Asaas.",
+  stripe: "Cole em Developers → Webhooks, no painel da Stripe.",
+  mercadopago: "Cole em Suas integrações → Webhooks, no painel do Mercado Pago.",
+};
+
 export function GatewayAutomaticoCard({
   tipo,
   nome,
@@ -58,6 +64,18 @@ export function GatewayAutomaticoCard({
   const [state, formAction, pending] = useActionState(salvar, initialState);
   const [, startTransition] = useTransition();
   const [testeMensagem, setTesteMensagem] = useState<string | null>(null);
+  const [urlWebhook, setUrlWebhook] = useState("");
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    startTransition(() => setUrlWebhook(`${window.location.origin}/api/webhooks/${tipo}`));
+  }, [tipo]);
+
+  function copiarWebhook() {
+    navigator.clipboard?.writeText(urlWebhook);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }
 
   return (
     <Card>
@@ -73,6 +91,19 @@ export function GatewayAutomaticoCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {principal && <p className="text-xs font-medium text-primary">Gateway principal ativo</p>}
+
+        <div className="space-y-1 rounded-lg border bg-muted/40 p-3">
+          <Label className="text-xs text-muted-foreground">URL do webhook</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={urlWebhook} className="text-xs" />
+            <Button type="button" size="icon" variant="outline" onClick={copiarWebhook}>
+              <Copy />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {copiado ? "Copiado!" : WEBHOOK_DICA[tipo]}
+          </p>
+        </div>
 
         <form action={formAction} className="space-y-3">
           <div className="space-y-2">
