@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { STATUS_AGENDAMENTO_META } from "@/lib/agenda/status";
 import { formatarData } from "@/lib/utils-domain/masks";
 
 type View = "dia" | "semana" | "mes" | "lista";
@@ -26,11 +27,13 @@ export function AgendaToolbar({
   data,
   profissionais,
   profissionalId,
+  status,
 }: {
   view: View;
   data: string;
   profissionais: { id: string; nome: string }[];
   profissionalId: string;
+  status: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -99,6 +102,29 @@ export function AgendaToolbar({
           {profissionais.map((p) => (
             <SelectItem key={p.id} value={p.id}>
               {p.nome}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select
+        items={{
+          todos: "Todos os status",
+          ...Object.fromEntries(
+            Object.entries(STATUS_AGENDAMENTO_META).map(([valor, meta]) => [valor, meta.label])
+          ),
+        }}
+        value={status || "todos"}
+        onValueChange={(v) => atualizar({ status: v === "todos" ? "" : (v ?? "") })}
+      >
+        <SelectTrigger className="w-56">
+          <SelectValue placeholder="Todos os status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="todos">Todos os status</SelectItem>
+          {Object.entries(STATUS_AGENDAMENTO_META).map(([valor, meta]) => (
+            <SelectItem key={valor} value={valor}>
+              {meta.label}
             </SelectItem>
           ))}
         </SelectContent>

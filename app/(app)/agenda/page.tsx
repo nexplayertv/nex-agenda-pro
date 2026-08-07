@@ -27,7 +27,7 @@ function addDias(data: string, dias: number): string {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; data?: string; profissionalId?: string }>;
+  searchParams: Promise<{ view?: string; data?: string; profissionalId?: string; status?: string }>;
 }) {
   const params = await searchParams;
   const ctx = await getAuthContext();
@@ -36,6 +36,7 @@ export default async function AgendaPage({
   const view = (params.view as "dia" | "semana" | "mes" | "lista") ?? "dia";
   const data = params.data ?? new Date().toISOString().slice(0, 10);
   const profissionalId = params.profissionalId ?? "";
+  const status = params.status ?? "";
   const hoje = new Date().toISOString().slice(0, 10);
 
   const supabase = await createClient();
@@ -65,6 +66,7 @@ export default async function AgendaPage({
     .order("hora_inicio");
 
   if (profissionalId) query = query.eq("profissional_id", profissionalId);
+  if (status) query = query.eq("status", status);
 
   const [{ data: agendamentosData }, { data: profissionais }, { data: empresa }, { data: config }] =
     await Promise.all([
@@ -140,6 +142,7 @@ export default async function AgendaPage({
         data={data}
         profissionais={profissionais ?? []}
         profissionalId={profissionalId}
+        status={status}
       />
 
       <AgendaView
