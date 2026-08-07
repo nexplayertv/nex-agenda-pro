@@ -442,12 +442,16 @@ export async function buscarAgendamentosClienteAction(
   const { data: agendamentos } = await supabase
     .from("agendamentos")
     .select(
-      "id, data, hora_inicio, status, valor_total, valor_entrada, servicos(nome), profissionais(nome)"
+      "id, data, hora_inicio, status, valor_total, valor_entrada, created_at, servicos(nome), profissionais(nome)"
     )
     .eq("empresa_id", empresa.id)
     .eq("cliente_id", cliente.id)
     .order("data", { ascending: false })
     .order("hora_inicio", { ascending: false })
+    // Desempate para tentativas repetidas no mesmo horario (ex.: uma
+    // reserva expirada seguida de uma nova bem-sucedida) - a mais
+    // recente aparece primeiro, ficando mais claro qual e a "valida".
+    .order("created_at", { ascending: false })
     .limit(20);
 
   return {
