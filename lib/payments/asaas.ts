@@ -99,7 +99,7 @@ export class AsaasGateway implements PaymentGateway {
         `/payments/${cobranca.id}/pixQrCode`
       );
       pixCopiaECola = pix.payload;
-      qrCodeBase64 = pix.encodedImage;
+      qrCodeBase64 = pix.encodedImage ? `data:image/png;base64,${pix.encodedImage}` : undefined;
     } catch {
       // QR Code Pix pode nao estar disponivel imediatamente; o cliente
       // ainda pode pagar pelo link (invoiceUrl).
