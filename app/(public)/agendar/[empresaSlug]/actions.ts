@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSlotsDisponiveis } from "@/lib/agenda/disponibilidade";
 import { AsaasGateway } from "@/lib/payments/asaas";
 import { descriptografarCredenciais } from "@/lib/payments/credentials";
-import type { PaymentGateway } from "@/lib/payments/gateway";
+import { GatewayValidationError, type PaymentGateway } from "@/lib/payments/gateway";
 import { MercadoPagoGateway } from "@/lib/payments/mercadopago";
 import { StripeGateway } from "@/lib/payments/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -269,7 +269,11 @@ export async function criarReservaPublica(
     } catch (error) {
       console.error("criarReservaPublica: falha ao criar cobrança", error);
       await cancelarPorFalhaNaCobranca(supabase, agendamento.id);
-      return { error: "Não foi possível gerar o pagamento agora. Tente novamente em instantes." };
+      const mensagem =
+        error instanceof GatewayValidationError
+          ? error.message
+          : "Não foi possível gerar o pagamento agora. Tente novamente em instantes.";
+      return { error: mensagem };
     }
   }
 

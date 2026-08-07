@@ -1,11 +1,21 @@
 import "server-only";
 
-import type {
-  CriarCobrancaInput,
-  CriarCobrancaResultado,
-  PaymentGateway,
-  StatusCobranca,
+import {
+  GatewayValidationError,
+  type CriarCobrancaInput,
+  type CriarCobrancaResultado,
+  type PaymentGateway,
+  type StatusCobranca,
 } from "./gateway";
+
+function extrairDescricaoErro(corpoJson: string): string | null {
+  try {
+    const corpo = JSON.parse(corpoJson) as { errors?: { description?: string }[] };
+    return corpo.errors?.[0]?.description ?? null;
+  } catch {
+    return null;
+  }
+}
 
 const STATUS_MAP: Record<string, StatusCobranca> = {
   PENDING: "pendente",
@@ -37,6 +47,10 @@ export class AsaasGateway implements PaymentGateway {
 
     if (!response.ok) {
       const corpo = await response.text();
+      if (response.status === 400) {
+        const descricao = extrairDescricaoErro(corpo);
+        if (descricao) throw new GatewayValidationError(descricao);
+      }
       throw new Error(`Asaas: ${response.status} - ${corpo}`);
     }
 

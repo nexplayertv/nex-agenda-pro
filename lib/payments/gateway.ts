@@ -30,3 +30,8 @@ export interface PaymentGateway {
   reembolsar(transacaoId: string): Promise<void>;
   testarConexao(): Promise<{ ok: boolean; mensagem: string }>;
 }
+
+// Erro de dado invalido enviado pelo proprio cliente (ex.: CPF invalido) -
+// a mensagem e segura para mostrar na tela do link publico. Qualquer outro
+// erro (rede, credencial, config) NUNCA deve vazar detalhes para o cliente.
+export class GatewayValidationError extends Error {}

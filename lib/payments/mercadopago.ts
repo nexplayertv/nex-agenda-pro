@@ -1,11 +1,12 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import type {
-  CriarCobrancaInput,
-  CriarCobrancaResultado,
-  PaymentGateway,
-  StatusCobranca,
+import {
+  GatewayValidationError,
+  type CriarCobrancaInput,
+  type CriarCobrancaResultado,
+  type PaymentGateway,
+  type StatusCobranca,
 } from "./gateway";
 
 const STATUS_MAP: Record<string, StatusCobranca> = {
@@ -18,6 +19,18 @@ const STATUS_MAP: Record<string, StatusCobranca> = {
   refunded: "reembolsado",
   charged_back: "reembolsado",
 };
+
+function extrairDescricaoErro(corpoJson: string): string | null {
+  try {
+    const corpo = JSON.parse(corpoJson) as {
+      message?: string;
+      cause?: { description?: string }[];
+    };
+    return corpo.cause?.[0]?.description ?? corpo.message ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type PagamentoMercadoPago = {
   id: number;
@@ -42,6 +55,10 @@ export class MercadoPagoGateway implements PaymentGateway {
 
     if (!response.ok) {
       const corpo = await response.text();
+      if (response.status === 400) {
+        const descricao = extrairDescricaoErro(corpo);
+        if (descricao) throw new GatewayValidationError(descricao);
+      }
       throw new Error(`Mercado Pago: ${response.status} - ${corpo}`);
     }
 
