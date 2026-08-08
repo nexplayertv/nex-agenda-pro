@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +24,17 @@ import {
 import type { NotificacaoResumo } from "@/components/layout/notification-bell";
 
 export function NotificacoesLista({ notificacoes }: { notificacoes: NotificacaoResumo[] }) {
-  const [, startTransition] = useTransition();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [confirmandoLimpeza, setConfirmandoLimpeza] = useState(false);
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
+
+  function executar(acao: () => Promise<void>) {
+    startTransition(async () => {
+      await acao();
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-3">
@@ -34,14 +43,20 @@ export function NotificacoesLista({ notificacoes }: { notificacoes: NotificacaoR
           <Button
             variant="outline"
             size="sm"
-            onClick={() => startTransition(() => marcarTodasLidas())}
+            disabled={pending}
+            onClick={() => executar(marcarTodasLidas)}
           >
             <Check />
-            Marcar todas como lidas
+            {pending ? "Marcando..." : "Marcar todas como lidas"}
           </Button>
         )}
         {notificacoes.length > 0 && (
-          <Button variant="outline" size="sm" onClick={() => setConfirmandoLimpeza(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() => setConfirmandoLimpeza(true)}
+          >
             <Trash2 />
             Limpar todas
           </Button>
@@ -60,14 +75,16 @@ export function NotificacoesLista({ notificacoes }: { notificacoes: NotificacaoR
           <DialogFooter>
             <Button
               variant="destructive"
+              disabled={pending}
               onClick={() =>
                 startTransition(async () => {
                   await apagarTodasNotificacoes();
                   setConfirmandoLimpeza(false);
+                  router.refresh();
                 })
               }
             >
-              Apagar tudo
+              {pending ? "Apagando..." : "Apagar tudo"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -102,7 +119,8 @@ export function NotificacoesLista({ notificacoes }: { notificacoes: NotificacaoR
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => startTransition(() => marcarNotificacaoLida(n.id))}
+                disabled={pending}
+                onClick={() => executar(() => marcarNotificacaoLida(n.id))}
               >
                 Marcar como lida
               </Button>
