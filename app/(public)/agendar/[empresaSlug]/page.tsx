@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { corContrastante } from "@/lib/utils-domain/cor";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -170,14 +172,16 @@ export default async function AgendarPage({
           </p>
         )}
 
-        <div className="text-center">
-          <Link
-            href={`/agendar/${empresaSlug}/status`}
-            className={`text-sm underline underline-offset-4 hover:opacity-100 ${classeTextoSecundario}`}
-          >
-            Já agendou? Consulte o status aqui
-          </Link>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full bg-transparent"
+          render={
+            <Link href={`/agendar/${empresaSlug}/status`}>
+              <Search />
+              Já agendou? Consulte o status aqui
+            </Link>
+          }
+        />
       </div>
     </div>
   );
