@@ -301,18 +301,14 @@ async function cancelarPorFalhaNaCobranca(
   supabase: ReturnType<typeof createServiceClient>,
   agendamentoId: string
 ): Promise<void> {
-  await supabase
-    .from("agendamentos")
-    .update({ status: "cancelado", cancelado_motivo: "Falha ao gerar cobrança" })
-    .eq("id", agendamentoId);
-  await supabase
-    .from("reservas_temporarias")
-    .update({ status: "cancelada" })
-    .eq("agendamento_id", agendamentoId);
-  await supabase
-    .from("pagamentos")
-    .update({ status: "cancelado" })
-    .eq("agendamento_id", agendamentoId);
+  // Apaga em vez de marcar como cancelado: nesse ponto o cliente nunca
+  // chegou a ver um QR Code nem tentar pagar de verdade (foi um erro
+  // de validacao, ex.: CPF invalido) - manter um registro "cancelado"
+  // permanente na Agenda so por causa de um erro de digitacao seria
+  // lixo, nao historico real. reservas_temporarias e pagamentos tem
+  // "on delete cascade" a partir de agendamentos, entao apagar aqui
+  // ja limpa os tres.
+  await supabase.from("agendamentos").delete().eq("id", agendamentoId);
 }
 
 export async function enviarComprovanteAction(
