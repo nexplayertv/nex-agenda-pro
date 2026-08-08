@@ -10,12 +10,10 @@ const initialState: ActionState = { error: null };
 
 export function AparenciaForm({
   logoUrl,
-  imagemCapaUrl,
   corPrimaria,
   corSecundaria,
 }: {
   logoUrl: string | null;
-  imagemCapaUrl: string | null;
   corPrimaria: string;
   corSecundaria: string;
 }) {
@@ -28,15 +26,6 @@ export function AparenciaForm({
       <div className="space-y-2">
         <Label htmlFor="logoUrl">URL do logotipo</Label>
         <Input id="logoUrl" name="logoUrl" placeholder="https://..." defaultValue={logoUrl ?? ""} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="imagemCapaUrl">URL da imagem de capa</Label>
-        <Input
-          id="imagemCapaUrl"
-          name="imagemCapaUrl"
-          placeholder="https://..."
-          defaultValue={imagemCapaUrl ?? ""}
-        />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

@@ -63,7 +63,6 @@ export default async function ConfiguracoesPage() {
             <TabsContent value="aparencia" className="pt-4">
               <AparenciaForm
                 logoUrl={config.logo_url}
-                imagemCapaUrl={config.imagem_capa_url}
                 corPrimaria={config.cor_primaria}
                 corSecundaria={config.cor_secundaria}
               />

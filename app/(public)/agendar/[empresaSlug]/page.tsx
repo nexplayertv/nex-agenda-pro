@@ -26,7 +26,7 @@ export default async function AgendarPage({
       supabase
         .from("configuracoes_empresas")
         .select(
-          "descricao, endereco, telefone, whatsapp, cor_primaria, logo_url, imagem_capa_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
+          "descricao, endereco, telefone, whatsapp, cor_primaria, logo_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
         )
         .eq("empresa_id", empresa.id)
         .single(),
@@ -94,90 +94,87 @@ export default async function AgendarPage({
   const pagamentoDisponivel = usarGatewayAutomatico || pixAtivo;
 
   const corPrimaria = config?.cor_primaria || null;
-  const estiloCor = corPrimaria
-    ? ({
-        "--primary": corPrimaria,
-        "--primary-foreground": corContrastante(corPrimaria),
-      } as React.CSSProperties)
+  const estiloFundo = corPrimaria
+    ? { backgroundColor: corPrimaria, color: corContrastante(corPrimaria) }
     : undefined;
+  // Sobre um fundo customizado o "cinza apagado" do tema nao teria
+  // contraste garantido - usamos a mesma cor de texto com opacidade.
+  const classeTextoSecundario = corPrimaria ? "opacity-80" : "text-muted-foreground";
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 py-8" style={estiloCor}>
-      {config?.imagem_capa_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={config.imagem_capa_url}
-          alt=""
-          className="h-32 w-full rounded-lg object-cover sm:h-40"
-        />
-      )}
+    <div className="min-h-screen w-full" style={estiloFundo}>
+      <div className="mx-auto max-w-lg space-y-6 py-8">
+        <div className="text-center">
+          {config?.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={config.logo_url}
+              alt={empresa.nome}
+              className="mx-auto mb-2 size-16 rounded-full border object-cover"
+            />
+          )}
+          <h1 className="text-2xl font-bold">{empresa.nome}</h1>
+          {config?.descricao && (
+            <p className={`text-sm ${classeTextoSecundario}`}>{config.descricao}</p>
+          )}
+          {config?.endereco && (
+            <p className={`text-xs ${classeTextoSecundario}`}>{config.endereco}</p>
+          )}
+        </div>
 
-      <div className="text-center">
-        {config?.logo_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={config.logo_url}
-            alt={empresa.nome}
-            className="mx-auto mb-2 size-16 rounded-full border object-cover"
+        {!pagamentoDisponivel && (
+          <Card>
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Nenhuma forma de pagamento está configurada no momento. Entre em contato com{" "}
+              {empresa.nome} para agendar.
+            </CardContent>
+          </Card>
+        )}
+
+        {pagamentoDisponivel && servicosFormatados.length > 0 && (
+          <BookingFlow
+            empresaId={empresa.id}
+            empresaSlug={empresaSlug}
+            empresaNome={empresa.nome}
+            servicos={servicosFormatados}
+            profissionaisPorServico={profissionaisPorServico}
+            percentualEntrada={config.percentual_entrada}
+            gatewayAutomaticoTipo={usarGatewayAutomatico ? gatewayAutomatico!.tipo : null}
+            chavePix={
+              pixAtivo
+                ? {
+                    chave: chavePix!.chave,
+                    nomeTitular: chavePix!.nome_titular,
+                    nomeBanco: chavePix!.nome_banco,
+                    cidade: chavePix!.cidade_recebedor,
+                  }
+                : null
+            }
           />
         )}
-        <h1 className="text-2xl font-bold">{empresa.nome}</h1>
-        {config?.descricao && <p className="text-sm text-muted-foreground">{config.descricao}</p>}
-        {config?.endereco && <p className="text-xs text-muted-foreground">{config.endereco}</p>}
-      </div>
 
-      {!pagamentoDisponivel && (
-        <Card>
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma forma de pagamento está configurada no momento. Entre em contato com{" "}
-            {empresa.nome} para agendar.
-          </CardContent>
-        </Card>
-      )}
+        {pagamentoDisponivel && servicosFormatados.length === 0 && (
+          <Card>
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Nenhum serviço disponível para agendamento no momento.
+            </CardContent>
+          </Card>
+        )}
 
-      {pagamentoDisponivel && servicosFormatados.length > 0 && (
-        <BookingFlow
-          empresaId={empresa.id}
-          empresaSlug={empresaSlug}
-          empresaNome={empresa.nome}
-          servicos={servicosFormatados}
-          profissionaisPorServico={profissionaisPorServico}
-          percentualEntrada={config.percentual_entrada}
-          gatewayAutomaticoTipo={usarGatewayAutomatico ? gatewayAutomatico!.tipo : null}
-          chavePix={
-            pixAtivo
-              ? {
-                  chave: chavePix!.chave,
-                  nomeTitular: chavePix!.nome_titular,
-                  nomeBanco: chavePix!.nome_banco,
-                  cidade: chavePix!.cidade_recebedor,
-                }
-              : null
-          }
-        />
-      )}
+        {config?.politica_cancelamento && (
+          <p className={`text-center text-xs ${classeTextoSecundario}`}>
+            {config.politica_cancelamento}
+          </p>
+        )}
 
-      {pagamentoDisponivel && servicosFormatados.length === 0 && (
-        <Card>
-          <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Nenhum serviço disponível para agendamento no momento.
-          </CardContent>
-        </Card>
-      )}
-
-      {config?.politica_cancelamento && (
-        <p className="text-center text-xs text-muted-foreground">
-          {config.politica_cancelamento}
-        </p>
-      )}
-
-      <div className="text-center">
-        <Link
-          href={`/agendar/${empresaSlug}/status`}
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          Já agendou? Consulte o status aqui
-        </Link>
+        <div className="text-center">
+          <Link
+            href={`/agendar/${empresaSlug}/status`}
+            className={`text-sm underline underline-offset-4 hover:opacity-100 ${classeTextoSecundario}`}
+          >
+            Já agendou? Consulte o status aqui
+          </Link>
+        </div>
       </div>
     </div>
   );
