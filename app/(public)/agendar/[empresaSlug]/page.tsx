@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -106,10 +107,12 @@ export default async function AgendarPage({
       <div className="mx-auto max-w-lg space-y-6 py-8">
         <div className="text-center">
           {config?.logo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={config.logo_url}
               alt={empresa.nome}
+              width={64}
+              height={64}
+              priority
               className="mx-auto mb-2 size-16 rounded-full border object-cover"
             />
           )}
