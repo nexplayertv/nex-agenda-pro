@@ -1,27 +1,77 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatarData } from "@/lib/utils-domain/masks";
-import { marcarNotificacaoLida, marcarTodasLidas } from "@/app/(app)/notificacoes/actions";
+import {
+  apagarTodasNotificacoes,
+  marcarNotificacaoLida,
+  marcarTodasLidas,
+} from "@/app/(app)/notificacoes/actions";
 import type { NotificacaoResumo } from "@/components/layout/notification-bell";
 
 export function NotificacoesLista({ notificacoes }: { notificacoes: NotificacaoResumo[] }) {
   const [, startTransition] = useTransition();
+  const [confirmandoLimpeza, setConfirmandoLimpeza] = useState(false);
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
 
   return (
     <div className="space-y-3">
-      {naoLidas > 0 && (
-        <Button variant="outline" size="sm" onClick={() => startTransition(() => marcarTodasLidas())}>
-          <Check />
-          Marcar todas como lidas
-        </Button>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {naoLidas > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => startTransition(() => marcarTodasLidas())}
+          >
+            <Check />
+            Marcar todas como lidas
+          </Button>
+        )}
+        {notificacoes.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => setConfirmandoLimpeza(true)}>
+            <Trash2 />
+            Limpar todas
+          </Button>
+        )}
+      </div>
+
+      <Dialog open={confirmandoLimpeza} onOpenChange={setConfirmandoLimpeza}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Limpar todas as notificações?</DialogTitle>
+            <DialogDescription>
+              Isso apaga o histórico de notificações da empresa. Não afeta agendamentos, pagamentos
+              nem clientes.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                startTransition(async () => {
+                  await apagarTodasNotificacoes();
+                  setConfirmandoLimpeza(false);
+                })
+              }
+            >
+              Apagar tudo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {notificacoes.length === 0 && (
         <Card>

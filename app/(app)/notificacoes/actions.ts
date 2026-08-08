@@ -34,3 +34,18 @@ export async function marcarTodasLidas(): Promise<void> {
   revalidatePath("/notificacoes");
   revalidatePath("/dashboard");
 }
+
+export async function apagarTodasNotificacoes(): Promise<void> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("notificacoes")
+    .delete()
+    .eq("empresa_id", ctx.empresaId)
+    .or(`usuario_id.is.null,usuario_id.eq.${ctx.userId}`);
+
+  revalidatePath("/notificacoes");
+  revalidatePath("/dashboard");
+}
