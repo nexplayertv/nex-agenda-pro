@@ -42,6 +42,59 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
     c.nome.toLowerCase().includes(busca.toLowerCase())
   );
 
+  function acoes(cliente: ClienteLinha) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm">
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          {cliente.whatsapp && (
+            <DropdownMenuItem
+              render={
+                <a href={whatsappLink(cliente.whatsapp)} target="_blank" rel="noreferrer">
+                  <MessageCircle />
+                  WhatsApp
+                </a>
+              }
+            />
+          )}
+          <Can recurso="clientes" acao="editar">
+            <ClienteFormDialog
+              cliente={cliente}
+              trigger={
+                <DropdownMenuItem
+                  closeOnClick={false}
+                  render={
+                    <button type="button" className="w-full">
+                      <Pencil />
+                      Editar
+                    </button>
+                  }
+                />
+              }
+            />
+          </Can>
+          <Can recurso="clientes" acao="excluir">
+            <DropdownMenuItem
+              variant={cliente.status === "ativo" ? "destructive" : "default"}
+              onClick={() =>
+                startTransition(() => alternarStatusCliente(cliente.id, cliente.status !== "ativo"))
+              }
+            >
+              {cliente.status === "ativo" ? <UserX /> : <UserCheck />}
+              {cliente.status === "ativo" ? "Desativar" : "Reativar"}
+            </DropdownMenuItem>
+          </Can>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <Input
@@ -51,105 +104,74 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
         className="max-w-xs"
       />
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>WhatsApp</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Cadastrado em</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtrados.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                  Nenhum cliente encontrado.
-                </TableCell>
-              </TableRow>
-            )}
+      {filtrados.length === 0 ? (
+        <div className="rounded-lg border py-10 text-center text-muted-foreground">
+          Nenhum cliente encontrado.
+        </div>
+      ) : (
+        <>
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>WhatsApp</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Cadastrado em</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtrados.map((cliente) => (
+                  <TableRow key={cliente.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="size-7">
+                          <AvatarFallback>{cliente.nome[0]?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{cliente.nome}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{cliente.whatsapp ?? "—"}</TableCell>
+                    <TableCell>{cliente.email ?? "—"}</TableCell>
+                    <TableCell>{formatarData(cliente.created_at)}</TableCell>
+                    <TableCell>
+                      <Badge variant={cliente.status === "ativo" ? "default" : "secondary"}>
+                        {cliente.status === "ativo" ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{acoes(cliente)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="space-y-3 md:hidden">
             {filtrados.map((cliente) => (
-              <TableRow key={cliente.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="size-7">
-                      <AvatarFallback>{cliente.nome[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{cliente.nome}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{cliente.whatsapp ?? "—"}</TableCell>
-                <TableCell>{cliente.email ?? "—"}</TableCell>
-                <TableCell>{formatarData(cliente.created_at)}</TableCell>
-                <TableCell>
-                  <Badge variant={cliente.status === "ativo" ? "default" : "secondary"}>
-                    {cliente.status === "ativo" ? "Ativo" : "Inativo"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button variant="ghost" size="icon-sm">
-                          <MoreHorizontal />
-                        </Button>
-                      }
-                    />
-                    <DropdownMenuContent align="end">
-                      {cliente.whatsapp && (
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href={whatsappLink(cliente.whatsapp)}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <MessageCircle />
-                              WhatsApp
-                            </a>
-                          }
-                        />
-                      )}
-                      <Can recurso="clientes" acao="editar">
-                        <ClienteFormDialog
-                          cliente={cliente}
-                          trigger={
-                            <DropdownMenuItem
-                              closeOnClick={false}
-                              render={
-                                <button type="button" className="w-full">
-                                  <Pencil />
-                                  Editar
-                                </button>
-                              }
-                            />
-                          }
-                        />
-                      </Can>
-                      <Can recurso="clientes" acao="excluir">
-                        <DropdownMenuItem
-                          variant={cliente.status === "ativo" ? "destructive" : "default"}
-                          onClick={() =>
-                            startTransition(() =>
-                              alternarStatusCliente(cliente.id, cliente.status !== "ativo")
-                            )
-                          }
-                        >
-                          {cliente.status === "ativo" ? <UserX /> : <UserCheck />}
-                          {cliente.status === "ativo" ? "Desativar" : "Reativar"}
-                        </DropdownMenuItem>
-                      </Can>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
+              <div key={cliente.id} className="flex items-center gap-3 rounded-lg border p-3">
+                <Avatar className="size-9 shrink-0">
+                  <AvatarFallback>{cliente.nome[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{cliente.nome}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {cliente.whatsapp ?? cliente.email ?? "—"}
+                  </p>
+                </div>
+                <Badge
+                  variant={cliente.status === "ativo" ? "default" : "secondary"}
+                  className="shrink-0"
+                >
+                  {cliente.status === "ativo" ? "Ativo" : "Inativo"}
+                </Badge>
+                {acoes(cliente)}
+              </div>
             ))}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -72,185 +72,208 @@ export function FuncionariosTable({
 }) {
   const [, startTransition] = useTransition();
 
-  return (
-    <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Funcionário</TableHead>
-            <TableHead>Cargo</TableHead>
-            <TableHead>Último acesso</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {funcionarios.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                Nenhum funcionário cadastrado ainda.
-              </TableCell>
-            </TableRow>
-          )}
-          {funcionarios.map((f) => (
-            <TableRow key={f.id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Avatar className="size-7">
-                    <AvatarFallback>{f.nome[0]?.toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium leading-none">{f.nome}</p>
-                    <p className="text-xs text-muted-foreground">{f.email}</p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>{f.cargos?.nome ?? "—"}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {f.ultimo_acesso_em ? formatarData(f.ultimo_acesso_em) : "Nunca"}
-              </TableCell>
-              <TableCell>
-                <Badge variant={STATUS_VARIANT[f.status]}>{STATUS_LABEL[f.status]}</Badge>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
+  function acoes(f: FuncionarioLinha) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm">
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <Can recurso="funcionarios" acao="editar">
+            <EditarFuncionarioDialog
+              funcionario={f}
+              cargos={cargos}
+              profissionais={profissionais}
+              trigger={
+                <DropdownMenuItem
+                  closeOnClick={false}
+                  render={
+                    <button type="button" className="w-full">
+                      <Pencil />
+                      Editar
+                    </button>
+                  }
+                />
+              }
+            />
+          </Can>
+
+          {f.usuario_id && (
+            <Can recurso="funcionarios" acao="visualizar">
+              <HistoricoDialog
+                usuarioId={f.usuario_id}
+                trigger={
+                  <DropdownMenuItem
+                    closeOnClick={false}
                     render={
-                      <Button variant="ghost" size="icon-sm">
-                        <MoreHorizontal />
-                      </Button>
+                      <button type="button" className="w-full">
+                        <History />
+                        Histórico de atividades
+                      </button>
                     }
                   />
-                  <DropdownMenuContent align="end">
-                    <Can recurso="funcionarios" acao="editar">
-                      <EditarFuncionarioDialog
-                        funcionario={f}
-                        cargos={cargos}
-                        profissionais={profissionais}
-                        trigger={
-                          <DropdownMenuItem
-                            closeOnClick={false}
-                            render={
-                              <button type="button" className="w-full">
-                                <Pencil />
-                                Editar
-                              </button>
-                            }
-                          />
-                        }
-                      />
-                    </Can>
+                }
+              />
+            </Can>
+          )}
 
-                    {f.usuario_id && (
-                      <Can recurso="funcionarios" acao="visualizar">
-                        <HistoricoDialog
-                          usuarioId={f.usuario_id}
-                          trigger={
-                            <DropdownMenuItem
-                              closeOnClick={false}
-                              render={
-                                <button type="button" className="w-full">
-                                  <History />
-                                  Histórico de atividades
-                                </button>
-                              }
-                            />
-                          }
-                        />
-                      </Can>
-                    )}
+          {f.status === "convidado" && (
+            <Can recurso="funcionarios" acao="editar">
+              <DropdownMenuItem
+                onClick={() =>
+                  startTransition(async () => {
+                    const r = await reenviarConvite(f.id);
+                    if (r.link) {
+                      navigator.clipboard?.writeText(r.link);
+                      toast.success("Link de convite copiado para a área de transferência.");
+                    } else if (r.error) {
+                      toast.error(r.error);
+                    }
+                  })
+                }
+              >
+                <Send />
+                Reenviar convite
+              </DropdownMenuItem>
+            </Can>
+          )}
 
-                    {f.status === "convidado" && (
-                      <Can recurso="funcionarios" acao="editar">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            startTransition(async () => {
-                              const r = await reenviarConvite(f.id);
-                              if (r.link) {
-                                navigator.clipboard?.writeText(r.link);
-                                toast.success("Link de convite copiado para a área de transferência.");
-                              } else if (r.error) {
-                                toast.error(r.error);
-                              }
-                            })
-                          }
-                        >
-                          <Send />
-                          Reenviar convite
-                        </DropdownMenuItem>
-                      </Can>
-                    )}
+          {f.status === "ativo" && (
+            <Can recurso="funcionarios" acao="editar">
+              <DropdownMenuItem
+                onClick={() =>
+                  startTransition(async () => {
+                    await redefinirSenhaFuncionario(f.email);
+                  })
+                }
+              >
+                <KeyRound />
+                Redefinir senha
+              </DropdownMenuItem>
+            </Can>
+          )}
 
-                    {f.status === "ativo" && (
-                      <Can recurso="funcionarios" acao="editar">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            startTransition(async () => {
-                              await redefinirSenhaFuncionario(f.email);
-                            })
-                          }
-                        >
-                          <KeyRound />
-                          Redefinir senha
-                        </DropdownMenuItem>
-                      </Can>
-                    )}
+          <Can recurso="funcionarios" acao="excluir">
+            {f.status === "ativo" && (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() =>
+                  startTransition(async () => {
+                    await bloquearFuncionario(f.id);
+                  })
+                }
+              >
+                <Lock />
+                Bloquear acesso
+              </DropdownMenuItem>
+            )}
+            {f.status === "bloqueado" && (
+              <DropdownMenuItem
+                onClick={() =>
+                  startTransition(async () => {
+                    await reativarFuncionario(f.id);
+                  })
+                }
+              >
+                <Unlock />
+                Reativar acesso
+              </DropdownMenuItem>
+            )}
+            {(f.status === "ativo" || f.status === "bloqueado") && (
+              <DesligarFuncionarioDialog
+                funcionarioId={f.id}
+                profissionalId={f.profissional_id}
+                outrosProfissionais={profissionais.filter((p) => p.id !== f.profissional_id)}
+                trigger={
+                  <DropdownMenuItem
+                    variant="destructive"
+                    closeOnClick={false}
+                    render={
+                      <button type="button" className="w-full">
+                        <UserX />
+                        Desligar
+                      </button>
+                    }
+                  />
+                }
+              />
+            )}
+          </Can>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
-                    <Can recurso="funcionarios" acao="excluir">
-                      {f.status === "ativo" && (
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() =>
-                            startTransition(async () => {
-                              await bloquearFuncionario(f.id);
-                            })
-                          }
-                        >
-                          <Lock />
-                          Bloquear acesso
-                        </DropdownMenuItem>
-                      )}
-                      {f.status === "bloqueado" && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            startTransition(async () => {
-                              await reativarFuncionario(f.id);
-                            })
-                          }
-                        >
-                          <Unlock />
-                          Reativar acesso
-                        </DropdownMenuItem>
-                      )}
-                      {(f.status === "ativo" || f.status === "bloqueado") && (
-                        <DesligarFuncionarioDialog
-                          funcionarioId={f.id}
-                          profissionalId={f.profissional_id}
-                          outrosProfissionais={profissionais.filter(
-                            (p) => p.id !== f.profissional_id
-                          )}
-                          trigger={
-                            <DropdownMenuItem
-                              variant="destructive"
-                              closeOnClick={false}
-                              render={
-                                <button type="button" className="w-full">
-                                  <UserX />
-                                  Desligar
-                                </button>
-                              }
-                            />
-                          }
-                        />
-                      )}
-                    </Can>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+  if (funcionarios.length === 0) {
+    return (
+      <div className="rounded-lg border py-10 text-center text-muted-foreground">
+        Nenhum funcionário cadastrado ainda.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Funcionário</TableHead>
+              <TableHead>Cargo</TableHead>
+              <TableHead>Último acesso</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {funcionarios.map((f) => (
+              <TableRow key={f.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="size-7">
+                      <AvatarFallback>{f.nome[0]?.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium leading-none">{f.nome}</p>
+                      <p className="text-xs text-muted-foreground">{f.email}</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>{f.cargos?.nome ?? "—"}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {f.ultimo_acesso_em ? formatarData(f.ultimo_acesso_em) : "Nunca"}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={STATUS_VARIANT[f.status]}>{STATUS_LABEL[f.status]}</Badge>
+                </TableCell>
+                <TableCell>{acoes(f)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {funcionarios.map((f) => (
+          <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
+            <Avatar className="size-9 shrink-0">
+              <AvatarFallback>{f.nome[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium leading-none">{f.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">{f.cargos?.nome ?? "—"}</p>
+            </div>
+            <Badge variant={STATUS_VARIANT[f.status]} className="shrink-0">
+              {STATUS_LABEL[f.status]}
+            </Badge>
+            {acoes(f)}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
