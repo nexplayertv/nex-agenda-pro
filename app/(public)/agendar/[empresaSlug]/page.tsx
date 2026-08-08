@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
+import { corContrastante } from "@/lib/utils-domain/cor";
 import { createServiceClient } from "@/lib/supabase/service";
 import { BookingFlow } from "@/components/booking/booking-flow";
 
@@ -25,7 +26,7 @@ export default async function AgendarPage({
       supabase
         .from("configuracoes_empresas")
         .select(
-          "descricao, endereco, telefone, whatsapp, cor_primaria, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
+          "descricao, endereco, telefone, whatsapp, cor_primaria, logo_url, imagem_capa_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
         )
         .eq("empresa_id", empresa.id)
         .single(),
@@ -92,9 +93,34 @@ export default async function AgendarPage({
   const pixAtivo = !usarGatewayAutomatico && gatewayPix?.status === "ativo" && !!chavePix;
   const pagamentoDisponivel = usarGatewayAutomatico || pixAtivo;
 
+  const corPrimaria = config?.cor_primaria || null;
+  const estiloCor = corPrimaria
+    ? ({
+        "--primary": corPrimaria,
+        "--primary-foreground": corContrastante(corPrimaria),
+      } as React.CSSProperties)
+    : undefined;
+
   return (
-    <div className="mx-auto max-w-lg space-y-6 py-8">
+    <div className="mx-auto max-w-lg space-y-6 py-8" style={estiloCor}>
+      {config?.imagem_capa_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={config.imagem_capa_url}
+          alt=""
+          className="h-32 w-full rounded-lg object-cover sm:h-40"
+        />
+      )}
+
       <div className="text-center">
+        {config?.logo_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={config.logo_url}
+            alt={empresa.nome}
+            className="mx-auto mb-2 size-16 rounded-full border object-cover"
+          />
+        )}
         <h1 className="text-2xl font-bold">{empresa.nome}</h1>
         {config?.descricao && <p className="text-sm text-muted-foreground">{config.descricao}</p>}
         {config?.endereco && <p className="text-xs text-muted-foreground">{config.endereco}</p>}
