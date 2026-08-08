@@ -134,21 +134,29 @@ export async function criarReservaPublica(
     return { error: "Esse horário não está mais disponível. Volte e escolha outro." };
   }
 
-  let { data: cliente } = await supabase
+  // Compara por digitos, nao pela string exata - o mesmo numero digitado
+  // com formatacao diferente (com/sem parenteses, espacos, etc.) nao pode
+  // virar um cadastro de cliente duplicado.
+  const digitosWhatsapp = whatsapp.replace(/\D/g, "");
+  const { data: clientesEmpresa } = await supabase
     .from("clientes")
-    .select("id")
-    .eq("empresa_id", empresaId)
-    .eq("whatsapp", whatsapp)
-    .maybeSingle();
+    .select("id, whatsapp")
+    .eq("empresa_id", empresaId);
 
-  if (!cliente) {
+  const clienteExistente = (clientesEmpresa ?? []).find(
+    (c) => (c.whatsapp ?? "").replace(/\D/g, "") === digitosWhatsapp
+  );
+
+  let clienteId = clienteExistente?.id;
+
+  if (!clienteId) {
     const { data: novoCliente, error: erroCliente } = await supabase
       .from("clientes")
       .insert({ empresa_id: empresaId, nome: nomeCliente, whatsapp, email: email || null })
       .select("id")
       .single();
     if (erroCliente || !novoCliente) return { error: "Não foi possível registrar seus dados." };
-    cliente = novoCliente;
+    clienteId = novoCliente.id;
   }
 
   const [h, m] = horaInicio.split(":").map(Number);
@@ -166,7 +174,7 @@ export async function criarReservaPublica(
     .from("agendamentos")
     .insert({
       empresa_id: empresaId,
-      cliente_id: cliente.id,
+      cliente_id: clienteId,
       servico_id: servicoId,
       profissional_id: profissionalId,
       data,
@@ -425,14 +433,18 @@ export async function buscarAgendamentosClienteAction(
     .select("id, nome, whatsapp")
     .eq("empresa_id", empresa.id);
 
+  // Usa TODOS os cadastros de cliente que baterem, nao so o primeiro -
+  // cadastros duplicados (mesmo telefone digitado com formatacao
+  // diferente em reservas passadas) nao podem fazer agendamentos reais
+  // sumirem da consulta.
   const nomeNormalizado = normalizarTexto(nome);
-  const cliente = (clientes ?? []).find(
+  const clientesCorrespondentes = (clientes ?? []).filter(
     (c) =>
       normalizarTexto(c.nome) === nomeNormalizado &&
       telefonesCorrespondem((c.whatsapp ?? "").replace(/\D/g, ""), digitosInformados)
   );
 
-  if (!cliente) {
+  if (clientesCorrespondentes.length === 0) {
     return {
       error: "Não encontramos nenhum agendamento com esse nome e telefone.",
       agendamentos: [],
@@ -445,7 +457,10 @@ export async function buscarAgendamentosClienteAction(
       "id, data, hora_inicio, status, valor_total, valor_entrada, created_at, servicos(nome), profissionais(nome)"
     )
     .eq("empresa_id", empresa.id)
-    .eq("cliente_id", cliente.id)
+    .in(
+      "cliente_id",
+      clientesCorrespondentes.map((c) => c.id)
+    )
     .order("data", { ascending: false })
     .order("hora_inicio", { ascending: false })
     // Desempate para tentativas repetidas no mesmo horario (ex.: uma
