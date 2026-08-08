@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,13 @@ function addDias(data: string, dias: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function paraDataISO(date: Date): string {
+  const ano = date.getFullYear();
+  const mes = String(date.getMonth() + 1).padStart(2, "0");
+  const dia = String(date.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 export function AgendaToolbar({
   view,
   data,
@@ -38,6 +48,7 @@ export function AgendaToolbar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [calendarioAberto, setCalendarioAberto] = useState(false);
 
   function atualizar(mudancas: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -83,7 +94,28 @@ export function AgendaToolbar({
         >
           <ChevronRight />
         </Button>
-        <span className="pl-2 text-sm font-medium capitalize">{formatarData(data)}</span>
+
+        <Popover open={calendarioAberto} onOpenChange={setCalendarioAberto}>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <CalendarIcon />
+                <span className="capitalize">{formatarData(data)}</span>
+              </Button>
+            }
+          />
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={new Date(`${data}T00:00:00`)}
+              onSelect={(dia) => {
+                if (!dia) return;
+                atualizar({ data: paraDataISO(dia) });
+                setCalendarioAberto(false);
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <Select
