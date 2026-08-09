@@ -10,6 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -41,32 +42,39 @@ export function EditarVencimentoDialog({
   }
 
   return (
-    <>
-      <DropdownMenuItem onClick={() => setTimeout(() => setOpen(true), 0)}>
-        <Pencil />
-        Editar vencimento
-      </DropdownMenuItem>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Editar vencimento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="novoVencimento">Nova data de vencimento</Label>
-            <Input
-              id="novoVencimento"
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button onClick={salvar} disabled={pending || !data}>
-              {pending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <DropdownMenuItem
+            closeOnClick={false}
+            render={
+              <button type="button" className="w-full">
+                <Pencil />
+                Editar vencimento
+              </button>
+            }
+          />
+        }
+      />
+      <DialogContent className="sm:max-w-xs">
+        <DialogHeader>
+          <DialogTitle>Editar vencimento</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="novoVencimento">Nova data de vencimento</Label>
+          <Input
+            id="novoVencimento"
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button onClick={salvar} disabled={pending || !data}>
+            {pending ? "Salvando..." : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
