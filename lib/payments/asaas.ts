@@ -97,6 +97,9 @@ export class AsaasGateway implements PaymentGateway {
         description: input.descricao,
         externalReference: input.referenciaExterna,
         dueDate: new Date().toISOString().slice(0, 10),
+        callback: input.urlRetorno
+          ? { successUrl: input.urlRetorno, autoRedirect: true }
+          : undefined,
       }),
     });
 

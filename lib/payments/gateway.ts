@@ -16,6 +16,10 @@ export type CriarCobrancaInput = {
   // Pix exige CPF/CNPJ do cliente (ver AsaasGateway); "undefined" deixa o
   // proprio checkout hospedado do gateway perguntar a forma de pagamento.
   billingType?: "PIX" | "UNDEFINED";
+  // URL pra onde o gateway redireciona o pagador depois de pagar no
+  // checkout hospedado dele (suportado pelo Asaas; outros gateways podem
+  // ignorar este campo).
+  urlRetorno?: string;
 };
 
 export type CriarCobrancaResultado = {

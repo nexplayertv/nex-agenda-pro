@@ -124,6 +124,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
       clienteCpfCnpj: empresa.cnpj_cpf,
       referenciaExterna: `assinatura:${ctx.empresaId}`,
       billingType: "UNDEFINED",
+      urlRetorno: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
     });
 
     await supabaseAdmin.from("pagamentos_saas").insert({
