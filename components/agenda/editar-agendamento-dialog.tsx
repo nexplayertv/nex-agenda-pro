@@ -91,7 +91,10 @@ export function EditarAgendamentoDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar agendamento</DialogTitle>
-          <DialogDescription>{agendamento.servicos?.nome}</DialogDescription>
+          <DialogDescription>
+            {agendamento.servicos?.nome} · troque profissional, data ou horário para transferir
+            este agendamento para um horário disponível.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
