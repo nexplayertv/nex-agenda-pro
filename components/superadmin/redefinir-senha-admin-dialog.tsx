@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Copy, KeyRound } from "lucide-react";
+import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,21 +11,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { redefinirSenhaAdministrador } from "@/app/(superadmin)/empresas/actions";
 
+// Controlado de fora (ver empresa-acoes.tsx): o Dialog precisa ficar fora
+// da arvore do DropdownMenu que o abre, senao ele e desmontado junto
+// quando o menu fecha (mesmo passando por portal, continua sendo filho
+// React do menu).
 export function RedefinirSenhaAdminDialog({
   empresaId,
   nome,
+  open,
+  onOpenChange,
 }: {
   empresaId: string;
   nome: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [resultado, setResultado] = useState<{ email: string; senha: string } | null>(null);
 
@@ -52,23 +57,10 @@ export function RedefinirSenhaAdminDialog({
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        setOpen(v);
+        onOpenChange(v);
         if (!v) setResultado(null);
       }}
     >
-      <DialogTrigger
-        render={
-          <DropdownMenuItem
-            closeOnClick={false}
-            render={
-              <button type="button" className="w-full">
-                <KeyRound />
-                Redefinir senha do admin
-              </button>
-            }
-          />
-        }
-      />
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Redefinir senha do administrador</DialogTitle>

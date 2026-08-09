@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { useActionState } from "react";
 import { alterarSenha, type AlterarSenhaState } from "@/app/(app)/conta/actions";
 import { useCloseOnSuccess } from "@/hooks/use-close-on-success";
 import { Button } from "@/components/ui/button";
@@ -12,34 +11,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const initialState: AlterarSenhaState = { error: null };
 
-export function AlterarSenhaDialog() {
-  const [open, setOpen] = useState(false);
+// Controlado de fora (ver app-header.tsx): o Dialog precisa ficar fora da
+// arvore do DropdownMenu que o abre, senao ele e desmontado junto quando o
+// menu fecha (mesmo passando por portal, continua sendo filho React do
+// menu) - foi a causa do dialogo "piscar" (abrir e fechar na hora).
+export function AlterarSenhaDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [state, formAction, pending] = useActionState(alterarSenha, initialState);
-  useCloseOnSuccess(state, setOpen);
+  useCloseOnSuccess(state, onOpenChange);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <DropdownMenuItem
-            closeOnClick={false}
-            render={
-              <button type="button" className="w-full">
-                <KeyRound />
-                Alterar senha
-              </button>
-            }
-          />
-        }
-      />
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <form action={formAction}>
           <DialogHeader>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { LogOut, Search, Shield, User } from "lucide-react";
+import { useState, useTransition } from "react";
+import { KeyRound, LogOut, Search, Shield, User } from "lucide-react";
 import { sair } from "@/app/(public)/login/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export function AppHeader({
   const { can, isSuperadmin } = usePermissions();
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
   const iniciais = nome
     .split(" ")
     .slice(0, 2)
@@ -87,7 +88,10 @@ export function AppHeader({
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/configuracoes">Configurações</Link>} />
-            <AlterarSenhaDialog />
+            <DropdownMenuItem onClick={() => setSenhaDialogOpen(true)}>
+              <KeyRound />
+              Alterar senha
+            </DropdownMenuItem>
             {isSuperadmin && (
               <DropdownMenuItem
                 render={
@@ -115,6 +119,8 @@ export function AppHeader({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlterarSenhaDialog open={senhaDialogOpen} onOpenChange={setSenhaDialogOpen} />
     </header>
   );
 }

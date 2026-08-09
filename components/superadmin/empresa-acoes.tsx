@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { CalendarPlus, MoreHorizontal, Power, Trash2 } from "lucide-react";
+import { CalendarPlus, KeyRound, MoreHorizontal, Pencil, Power, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,8 +44,11 @@ export function EmpresaAcoes({
 }) {
   const [, startTransition] = useTransition();
   const [confirmacao, setConfirmacao] = useState("");
+  const [vencimentoDialogOpen, setVencimentoDialogOpen] = useState(false);
+  const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
@@ -67,8 +70,14 @@ export function EmpresaAcoes({
           <CalendarPlus />
           Renovar +30 dias
         </DropdownMenuItem>
-        <EditarVencimentoDialog empresaId={empresaId} vencimentoAtual={vencimentoAtual} />
-        <RedefinirSenhaAdminDialog empresaId={empresaId} nome={nome} />
+        <DropdownMenuItem onClick={() => setVencimentoDialogOpen(true)}>
+          <Pencil />
+          Editar vencimento
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSenhaDialogOpen(true)}>
+          <KeyRound />
+          Redefinir senha do admin
+        </DropdownMenuItem>
         <DropdownMenuItem
           variant={ativa ? "destructive" : "default"}
           onClick={() =>
@@ -137,5 +146,19 @@ export function EmpresaAcoes({
         </AlertDialog>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <EditarVencimentoDialog
+      empresaId={empresaId}
+      vencimentoAtual={vencimentoAtual}
+      open={vencimentoDialogOpen}
+      onOpenChange={setVencimentoDialogOpen}
+    />
+    <RedefinirSenhaAdminDialog
+      empresaId={empresaId}
+      nome={nome}
+      open={senhaDialogOpen}
+      onOpenChange={setSenhaDialogOpen}
+    />
+    </>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,21 +9,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { definirVencimento } from "@/app/(superadmin)/empresas/actions";
 
+// Controlado de fora (ver empresa-acoes.tsx): o Dialog precisa ficar fora
+// da arvore do DropdownMenu que o abre, senao ele e desmontado junto
+// quando o menu fecha (mesmo passando por portal, continua sendo filho
+// React do menu).
 export function EditarVencimentoDialog({
   empresaId,
   vencimentoAtual,
+  open,
+  onOpenChange,
 }: {
   empresaId: string;
   vencimentoAtual: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [data, setData] = useState(vencimentoAtual ? vencimentoAtual.slice(0, 10) : "");
   const [pending, startTransition] = useTransition();
 
@@ -36,26 +40,13 @@ export function EditarVencimentoDialog({
         toast.error(res.error);
       } else {
         toast.success("Vencimento atualizado.");
-        setOpen(false);
+        onOpenChange(false);
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <DropdownMenuItem
-            closeOnClick={false}
-            render={
-              <button type="button" className="w-full">
-                <Pencil />
-                Editar vencimento
-              </button>
-            }
-          />
-        }
-      />
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xs">
         <DialogHeader>
           <DialogTitle>Editar vencimento</DialogTitle>
