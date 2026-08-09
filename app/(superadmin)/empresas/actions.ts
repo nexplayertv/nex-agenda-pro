@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { registrarAtividade } from "@/lib/audit/log-atividade";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type ActionState = { error: string | null };
@@ -130,8 +131,12 @@ export async function redefinirSenhaAdministrador(
     return { error: "Nenhum administrador ativo encontrado para essa empresa." };
   }
 
+  // resetPasswordForEmail precisa do cliente normal (anon key) - o cliente
+  // de service role e para operacoes administrativas no banco, e nao se
+  // comporta como o navegador do usuario nesse endpoint publico do Auth.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const supabaseAuth = await createClient();
+  const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
     redirectTo: `${appUrl}/redefinir-senha`,
   });
 
