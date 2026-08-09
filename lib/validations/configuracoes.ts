@@ -30,6 +30,10 @@ export const configuracoesPagamentoSchema = z.object({
   politicaCancelamento: z.string().trim().optional().or(z.literal("")),
 });
 
+export const configuracoesMetasSchema = z.object({
+  metaCrescimentoPercentual: z.coerce.number().min(0).max(1000).nullable(),
+});
+
 export const configuracoesCatalogoSchema = z.object({
   catalogoPublicoAtivo: z.coerce.boolean(),
   ocultarValoresCatalogo: z.coerce.boolean(),

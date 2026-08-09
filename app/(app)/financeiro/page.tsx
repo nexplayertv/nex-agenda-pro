@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
 import { FaturamentoChart } from "@/components/financeiro/faturamento-chart";
 import { LancamentoDialog } from "@/components/financeiro/lancamento-dialog";
+import { ProjecaoVendasCard } from "@/components/financeiro/projecao-vendas-card";
 
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
@@ -35,6 +36,7 @@ export default async function FinanceiroPage() {
     { data: despesasMes },
     { count: totalFinalizados },
     { data: pendentes },
+    { data: config },
   ] = await Promise.all([
     supabase
       .from("receitas")
@@ -59,6 +61,11 @@ export default async function FinanceiroPage() {
       .select("valor")
       .eq("empresa_id", ctx.empresaId)
       .eq("status", "pendente"),
+    supabase
+      .from("configuracoes_empresas")
+      .select("meta_crescimento_percentual")
+      .eq("empresa_id", ctx.empresaId)
+      .single(),
   ]);
 
   const receitasMes = (receitas ?? []).filter((r) => r.data >= inicioMes);
@@ -78,6 +85,13 @@ export default async function FinanceiroPage() {
     const chave = `${d.getFullYear()}-${d.getMonth()}`;
     return { mes: MESES[d.getMonth()], valor: porMes.get(chave) ?? 0 };
   });
+
+  const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  const faturamentoMesAnterior = porMes.get(`${mesAnterior.getFullYear()}-${mesAnterior.getMonth()}`) ?? 0;
+  const metaPercentual = config?.meta_crescimento_percentual ?? null;
+  const metaMensal =
+    metaPercentual !== null ? faturamentoMesAnterior * (1 + Number(metaPercentual) / 100) : 0;
+  const diasNoMesAtual = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
 
   const cards = [
     { titulo: "Faturamento do mês", valor: formatarMoeda(faturamentoMes) },
@@ -115,6 +129,14 @@ export default async function FinanceiroPage() {
           <FaturamentoChart dados={dadosGrafico} />
         </CardContent>
       </Card>
+
+      <ProjecaoVendasCard
+        metaPercentual={metaPercentual !== null ? Number(metaPercentual) : null}
+        metaMensal={metaMensal}
+        ano={hoje.getFullYear()}
+        mes={hoje.getMonth()}
+        diasNoMes={diasNoMesAtual}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

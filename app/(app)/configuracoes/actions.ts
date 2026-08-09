@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   configuracoesAparenciaSchema,
   configuracoesCatalogoSchema,
+  configuracoesMetasSchema,
   configuracoesNegocioSchema,
   configuracoesPagamentoSchema,
 } from "@/lib/validations/configuracoes";
@@ -161,6 +162,46 @@ export async function salvarPagamento(
   });
 
   revalidatePath("/configuracoes");
+  return { error: null, sucesso: true };
+}
+
+export async function salvarMetas(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  const bruto = String(formData.get("metaCrescimentoPercentual") ?? "").trim();
+  const parsed = configuracoesMetasSchema.safeParse({
+    metaCrescimentoPercentual: bruto === "" ? null : bruto,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Verifique o valor informado." };
+  }
+
+  await requirePermission(ctx.empresaId, "configuracoes", "editar");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("configuracoes_empresas")
+    .update({ meta_crescimento_percentual: parsed.data.metaCrescimentoPercentual })
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) return { error: "Não foi possível salvar a meta." };
+
+  await registrarAtividade({
+    empresaId: ctx.empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: ctx.cargoNome,
+    acao: "editar",
+    recurso: "configuracoes",
+    dadosNovos: { evento: "meta_crescimento_alterada", ...parsed.data },
+  });
+
+  revalidatePath("/configuracoes");
+  revalidatePath("/financeiro");
   return { error: null, sucesso: true };
 }
 

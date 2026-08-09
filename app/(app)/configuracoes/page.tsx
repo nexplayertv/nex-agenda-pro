@@ -5,6 +5,7 @@ import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
 import { AparenciaForm } from "@/components/configuracoes/aparencia-form";
 import { CatalogoForm } from "@/components/configuracoes/catalogo-form";
+import { MetasForm } from "@/components/configuracoes/metas-form";
 import { NegocioForm } from "@/components/configuracoes/negocio-form";
 import { PagamentoForm } from "@/components/configuracoes/pagamento-form";
 
@@ -43,6 +44,7 @@ export default async function ConfiguracoesPage() {
               <TabsTrigger value="negocio">Negócio</TabsTrigger>
               <TabsTrigger value="aparencia">Aparência</TabsTrigger>
               <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+              <TabsTrigger value="metas">Metas</TabsTrigger>
               <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
             </TabsList>
 
@@ -79,6 +81,10 @@ export default async function ConfiguracoesPage() {
                 prazoAnaliseComprovanteMinutos={config.prazo_analise_comprovante_minutos}
                 politicaCancelamento={config.politica_cancelamento}
               />
+            </TabsContent>
+
+            <TabsContent value="metas" className="pt-4">
+              <MetasForm metaCrescimentoPercentual={config.meta_crescimento_percentual} />
             </TabsContent>
 
             <TabsContent value="catalogo" className="pt-4">
