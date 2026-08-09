@@ -8,6 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Can } from "@/hooks/use-permissions";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
@@ -36,13 +38,13 @@ export default async function FinanceiroPage() {
   ] = await Promise.all([
     supabase
       .from("receitas")
-      .select("valor, data, descricao, categoria, forma_pagamento")
+      .select("id, valor, data, descricao, categoria, forma_pagamento")
       .eq("empresa_id", ctx.empresaId)
       .gte("data", seiseMesesAtras)
       .order("data", { ascending: false }),
     supabase
       .from("despesas")
-      .select("valor, data, descricao, categoria")
+      .select("id, valor, data, descricao, categoria")
       .eq("empresa_id", ctx.empresaId)
       .gte("data", inicioMes)
       .order("data", { ascending: false }),
@@ -129,14 +131,35 @@ export default async function FinanceiroPage() {
                   <TableHead>Descrição</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(receitas ?? []).slice(0, 10).map((r, i) => (
-                  <TableRow key={i}>
+                {(receitas ?? []).slice(0, 10).map((r) => (
+                  <TableRow key={r.id}>
                     <TableCell>{r.descricao ?? r.categoria ?? "Receita"}</TableCell>
                     <TableCell>{formatarData(r.data)}</TableCell>
                     <TableCell className="text-right">{formatarMoeda(Number(r.valor))}</TableCell>
+                    <TableCell>
+                      <Can recurso="receitas" acao="editar">
+                        <LancamentoDialog
+                          tipo="receita"
+                          lancamento={{
+                            id: r.id,
+                            descricao: r.descricao ?? "",
+                            categoria: r.categoria,
+                            valor: Number(r.valor),
+                            data: r.data,
+                            forma_pagamento: r.forma_pagamento,
+                          }}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm">
+                              <Pencil />
+                            </Button>
+                          }
+                        />
+                      </Can>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -158,14 +181,34 @@ export default async function FinanceiroPage() {
                   <TableHead>Descrição</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(despesasMes ?? []).map((d, i) => (
-                  <TableRow key={i}>
+                {(despesasMes ?? []).map((d) => (
+                  <TableRow key={d.id}>
                     <TableCell>{d.descricao}</TableCell>
                     <TableCell>{formatarData(d.data)}</TableCell>
                     <TableCell className="text-right">{formatarMoeda(Number(d.valor))}</TableCell>
+                    <TableCell>
+                      <Can recurso="despesas" acao="editar">
+                        <LancamentoDialog
+                          tipo="despesa"
+                          lancamento={{
+                            id: d.id,
+                            descricao: d.descricao ?? "",
+                            categoria: d.categoria,
+                            valor: Number(d.valor),
+                            data: d.data,
+                          }}
+                          trigger={
+                            <Button variant="ghost" size="icon-sm">
+                              <Pencil />
+                            </Button>
+                          }
+                        />
+                      </Can>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

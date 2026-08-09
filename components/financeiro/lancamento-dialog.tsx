@@ -21,9 +21,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCloseOnSuccess } from "@/hooks/use-close-on-success";
-import { registrarDespesa, registrarReceita, type ActionState } from "@/app/(app)/financeiro/actions";
+import {
+  editarDespesa,
+  editarReceita,
+  registrarDespesa,
+  registrarReceita,
+  type ActionState,
+} from "@/app/(app)/financeiro/actions";
 
 const initialState: ActionState = { error: null };
+
+export type LancamentoExistente = {
+  id: string;
+  descricao: string;
+  categoria: string | null;
+  valor: number;
+  data: string;
+  forma_pagamento?: string | null;
+};
 
 const CATEGORIAS_DESPESA = [
   "Aluguel",
@@ -38,40 +53,68 @@ const CATEGORIAS_DESPESA = [
 
 const CATEGORIAS_RECEITA = ["Entrada de agendamento", "Venda avulsa", "Produto", "Outros"];
 
-export function LancamentoDialog({ tipo }: { tipo: "receita" | "despesa" }) {
+export function LancamentoDialog({
+  tipo,
+  lancamento,
+  trigger,
+}: {
+  tipo: "receita" | "despesa";
+  lancamento?: LancamentoExistente;
+  trigger?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
-  const action = tipo === "receita" ? registrarReceita : registrarDespesa;
+  const criarAction = tipo === "receita" ? registrarReceita : registrarDespesa;
+  const editarAction = tipo === "receita" ? editarReceita : editarDespesa;
+  const action = lancamento ? editarAction.bind(null, lancamento.id) : criarAction;
   const [state, formAction, pending] = useActionState(action, initialState);
   useCloseOnSuccess(state, setOpen);
 
   const hoje = new Date().toISOString().slice(0, 10);
   const categorias = tipo === "receita" ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA;
+  const titulo = lancamento
+    ? tipo === "receita"
+      ? "Editar receita"
+      : "Editar despesa"
+    : tipo === "receita"
+      ? "Registrar receita"
+      : "Registrar despesa";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button variant="outline" size="sm">
-            <Plus />
-            {tipo === "receita" ? "Registrar receita" : "Registrar despesa"}
-          </Button>
-        }
-      />
+      {trigger ? (
+        <DialogTrigger render={trigger as React.ReactElement} />
+      ) : (
+        <DialogTrigger
+          render={
+            <Button variant="outline" size="sm">
+              <Plus />
+              {titulo}
+            </Button>
+          }
+        />
+      )}
       <DialogContent className="sm:max-w-sm">
         <form action={formAction}>
           <DialogHeader>
-            <DialogTitle>
-              {tipo === "receita" ? "Registrar receita" : "Registrar despesa"}
-            </DialogTitle>
+            <DialogTitle>{titulo}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="descricao">Descrição</Label>
-              <Input id="descricao" name="descricao" required />
+              <Input
+                id="descricao"
+                name="descricao"
+                defaultValue={lancamento?.descricao}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoria</Label>
-              <Select items={Object.fromEntries(categorias.map((c) => [c, c]))} name="categoria">
+              <Select
+                items={Object.fromEntries(categorias.map((c) => [c, c]))}
+                name="categoria"
+                defaultValue={lancamento?.categoria ?? undefined}
+              >
                 <SelectTrigger id="categoria" className="w-full">
                   <SelectValue placeholder="Selecione (opcional)" />
                 </SelectTrigger>
@@ -87,17 +130,36 @@ export function LancamentoDialog({ tipo }: { tipo: "receita" | "despesa" }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="valor">Valor (R$)</Label>
-                <Input id="valor" name="valor" type="number" step="0.01" min="0" required />
+                <Input
+                  id="valor"
+                  name="valor"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={lancamento?.valor}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="data">Data</Label>
-                <Input id="data" name="data" type="date" defaultValue={hoje} required />
+                <Input
+                  id="data"
+                  name="data"
+                  type="date"
+                  defaultValue={lancamento?.data ?? hoje}
+                  required
+                />
               </div>
             </div>
             {tipo === "receita" && (
               <div className="space-y-2">
                 <Label htmlFor="formaPagamento">Forma de pagamento</Label>
-                <Input id="formaPagamento" name="formaPagamento" placeholder="Dinheiro, Pix..." />
+                <Input
+                  id="formaPagamento"
+                  name="formaPagamento"
+                  placeholder="Dinheiro, Pix..."
+                  defaultValue={lancamento?.forma_pagamento ?? ""}
+                />
               </div>
             )}
           </div>
