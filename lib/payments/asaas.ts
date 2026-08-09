@@ -58,8 +58,16 @@ export class AsaasGateway implements PaymentGateway {
   }
 
   private async buscarOuCriarCliente(input: CriarCobrancaInput): Promise<string> {
+    const cpfCnpj = input.clienteCpfCnpj?.replace(/\D/g, "");
+
+    // Busca por cpfCnpj quando disponivel, nao por email/nome - um cliente
+    // encontrado so por email pode ter sido criado antes sem cpfCnpj (ex.:
+    // uma tentativa anterior que falhou), e reaproveitar esse cadastro
+    // faria a cobranca falhar de novo mesmo com o cpfCnpj certo agora.
     const busca = await this.request<{ data: { id: string }[] }>(
-      `/customers?email=${encodeURIComponent(input.clienteEmail ?? "")}&name=${encodeURIComponent(input.clienteNome)}`
+      cpfCnpj
+        ? `/customers?cpfCnpj=${encodeURIComponent(cpfCnpj)}`
+        : `/customers?email=${encodeURIComponent(input.clienteEmail ?? "")}&name=${encodeURIComponent(input.clienteNome)}`
     );
     if (busca.data.length > 0) return busca.data[0].id;
 
@@ -71,7 +79,7 @@ export class AsaasGateway implements PaymentGateway {
         name: input.clienteNome,
         email: input.clienteEmail || undefined,
         mobilePhone: input.clienteWhatsapp || undefined,
-        cpfCnpj: input.clienteCpfCnpj?.replace(/\D/g, "") || undefined,
+        cpfCnpj: cpfCnpj || undefined,
       }),
     });
     return criado.id;
