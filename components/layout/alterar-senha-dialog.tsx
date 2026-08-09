@@ -15,8 +15,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const initialState: AlterarSenhaState = { error: null };
 
@@ -51,18 +51,29 @@ export function AlterarSenhaDialog() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="senhaAtual">Senha atual</Label>
-              <Input id="senhaAtual" name="senhaAtual" type="password" required />
+              <PasswordInput
+                id="senhaAtual"
+                name="senhaAtual"
+                autoComplete="current-password"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="novaSenha">Nova senha</Label>
-              <Input id="novaSenha" name="novaSenha" type="password" required minLength={8} />
+              <PasswordInput
+                id="novaSenha"
+                name="novaSenha"
+                autoComplete="new-password"
+                required
+                minLength={8}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmarSenha">Confirmar nova senha</Label>
-              <Input
+              <PasswordInput
                 id="confirmarSenha"
                 name="confirmarSenha"
-                type="password"
+                autoComplete="new-password"
                 required
                 minLength={8}
               />
