@@ -18,6 +18,7 @@ type EmpresaLinha = {
   slug: string;
   segmento: string;
   status_assinatura: string;
+  trial_expira_em: string | null;
   ativa: boolean;
   created_at: string;
   planos_saas: { nome: string } | null;
@@ -36,7 +37,9 @@ export default async function EmpresasSuperadminPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("empresas")
-    .select("id, nome, slug, segmento, status_assinatura, ativa, created_at, planos_saas(nome)")
+    .select(
+      "id, nome, slug, segmento, status_assinatura, trial_expira_em, ativa, created_at, planos_saas(nome)"
+    )
     .order("created_at", { ascending: false });
 
   const empresas = (data as unknown as EmpresaLinha[] | null) ?? [];
@@ -63,6 +66,7 @@ export default async function EmpresasSuperadminPage() {
                 <TableHead>Segmento</TableHead>
                 <TableHead>Plano</TableHead>
                 <TableHead>Assinatura</TableHead>
+                <TableHead>Vencimento</TableHead>
                 <TableHead>Acesso</TableHead>
                 <TableHead>Cadastrada em</TableHead>
               </TableRow>
@@ -84,6 +88,9 @@ export default async function EmpresasSuperadminPage() {
                       ) : (
                         empresa.status_assinatura
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {empresa.trial_expira_em ? formatarData(empresa.trial_expira_em) : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant={empresa.ativa ? "default" : "secondary"}>
