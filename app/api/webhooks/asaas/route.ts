@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { confirmarPagamentoSaas, recusarPagamentoSaas } from "@/lib/payments/assinatura-saas";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // Ver docs/asaas.md para configurar a URL do webhook no painel do Asaas.
@@ -93,28 +94,14 @@ async function processarPagamentoSaas(
   const statusRecusados = ["PAYMENT_OVERDUE", "PAYMENT_DELETED"];
 
   if (statusPagos.includes(evento)) {
-    const novoVencimento = new Date(Date.now() + 30 * 86_400_000).toISOString();
-
-    await supabase
-      .from("pagamentos_saas")
-      .update({ status: "pago", data_pagamento: new Date().toISOString() })
-      .eq("id", pagamentoSaas.id);
-
-    await supabase
-      .from("assinaturas_saas")
-      .update({
-        status: "ativa",
-        periodo_atual_inicio: new Date().toISOString(),
-        periodo_atual_fim: novoVencimento,
-      })
-      .eq("id", pagamentoSaas.assinatura_id);
-
-    await supabase
-      .from("empresas")
-      .update({ status_assinatura: "ativa", trial_expira_em: novoVencimento, ativa: true })
-      .eq("id", pagamentoSaas.empresa_id);
+    await confirmarPagamentoSaas(
+      supabase,
+      pagamentoSaas.id,
+      pagamentoSaas.assinatura_id,
+      pagamentoSaas.empresa_id
+    );
   } else if (statusRecusados.includes(evento)) {
-    await supabase.from("pagamentos_saas").update({ status: "falhou" }).eq("id", pagamentoSaas.id);
+    await recusarPagamentoSaas(supabase, pagamentoSaas.id);
   }
 }
 

@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { confirmarPagamentoSaas, recusarPagamentoSaas } from "@/lib/payments/assinatura-saas";
 import { descriptografarCredenciais } from "@/lib/payments/credentials";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!pagamento) {
+      await processarPagamentoSaasMercadoPago(supabase, dataId);
       await marcarProcessado(supabase, webhook?.id, "ok");
       return NextResponse.json({ received: true });
     }
@@ -132,6 +134,47 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     await marcarProcessado(supabase, webhook?.id, "erro", error);
     return NextResponse.json({ error: "Erro ao processar webhook" }, { status: 500 });
+  }
+}
+
+// Nao e entrada de agendamento - pode ser cobranca de assinatura da
+// plataforma (empresa pagando o AgendaPro). Usa a credencial da propria
+// plataforma (nao a de uma empresa cliente) pra reconsultar o status.
+async function processarPagamentoSaasMercadoPago(
+  supabase: ReturnType<typeof createServiceClient>,
+  dataId: string
+) {
+  const { data: pagamentoSaas } = await supabase
+    .from("pagamentos_saas")
+    .select("id, assinatura_id, empresa_id")
+    .eq("transacao_id", dataId)
+    .maybeSingle();
+
+  if (!pagamentoSaas) return;
+
+  const { data: credencial } = await supabase
+    .from("credenciais_gateway_plataforma")
+    .select("dados_criptografados")
+    .eq("tipo", "mercadopago")
+    .maybeSingle();
+
+  if (!credencial) return;
+
+  const { apiKey } = descriptografarCredenciais(credencial.dados_criptografados);
+  const resposta = await fetch(`https://api.mercadopago.com/v1/payments/${dataId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  const pagamentoMp = await resposta.json();
+
+  if (pagamentoMp.status === "approved") {
+    await confirmarPagamentoSaas(
+      supabase,
+      pagamentoSaas.id,
+      pagamentoSaas.assinatura_id,
+      pagamentoSaas.empresa_id
+    );
+  } else if (["rejected", "cancelled"].includes(pagamentoMp.status)) {
+    await recusarPagamentoSaas(supabase, pagamentoSaas.id);
   }
 }
 

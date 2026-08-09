@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
+import { confirmarPagamentoSaas } from "@/lib/payments/assinatura-saas";
 import { createServiceClient } from "@/lib/supabase/service";
 
 // Ver docs/stripe.md para configurar o endpoint no painel da Stripe e
@@ -58,6 +59,23 @@ export async function POST(request: NextRequest) {
           valor: pagamento.valor,
           forma_pagamento: pagamento.forma_pagamento,
         });
+      } else {
+        // Nao e entrada de agendamento - pode ser cobranca de assinatura
+        // da plataforma (empresa pagando o AgendaPro).
+        const { data: pagamentoSaas } = await supabase
+          .from("pagamentos_saas")
+          .select("id, assinatura_id, empresa_id")
+          .eq("transacao_id", session.id)
+          .maybeSingle();
+
+        if (pagamentoSaas) {
+          await confirmarPagamentoSaas(
+            supabase,
+            pagamentoSaas.id,
+            pagamentoSaas.assinatura_id,
+            pagamentoSaas.empresa_id
+          );
+        }
       }
     }
 

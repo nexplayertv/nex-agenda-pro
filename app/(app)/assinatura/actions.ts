@@ -2,18 +2,43 @@
 
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { AsaasGateway } from "@/lib/payments/asaas";
+import { descriptografarCredenciais } from "@/lib/payments/credentials";
+import type { PaymentGateway } from "@/lib/payments/gateway";
+import { MercadoPagoGateway } from "@/lib/payments/mercadopago";
+import { StripeGateway } from "@/lib/payments/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type RenovarState = { error: string | null; urlPagamento?: string };
 
+function instanciarGateway(
+  tipo: "asaas" | "stripe" | "mercadopago",
+  apiKey: string,
+  ambiente: string
+): PaymentGateway {
+  if (tipo === "asaas") {
+    return new AsaasGateway(apiKey, ambiente === "producao" ? "https://api.asaas.com/v3" : undefined);
+  }
+  if (tipo === "stripe") return new StripeGateway(apiKey);
+  return new MercadoPagoGateway(apiKey);
+}
+
 export async function renovarAssinatura(): Promise<RenovarState> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return { error: "Sessão inválida." };
 
-  const apiKey = process.env.ASAAS_PLATFORM_API_KEY;
-  if (!apiKey) {
-    return { error: "Renovação automática ainda não está configurada. Fale com o suporte." };
+  const supabaseAdmin = createServiceClient();
+  const { data: gatewayPlataforma } = await supabaseAdmin
+    .from("credenciais_gateway_plataforma")
+    .select("tipo, ambiente, dados_criptografados")
+    .eq("principal", true)
+    .maybeSingle();
+
+  if (!gatewayPlataforma) {
+    return {
+      error:
+        "Nenhum gateway de pagamento configurado para renovação. Peça para o administrador da plataforma configurar em Configurações da plataforma.",
+    };
   }
 
   const supabase = await createClient();
@@ -36,8 +61,6 @@ export async function renovarAssinatura(): Promise<RenovarState> {
   // RLS (ver 0011_rls_policies.sql) - aqui e o proprio tenant pagando a
   // propria mensalidade, entao usamos a service role para essa escrita
   // pontual, com empresaId vindo do contexto autenticado (nao de input).
-  const supabaseAdmin = createServiceClient();
-
   let assinaturaId = assinatura?.id ?? null;
   if (!assinaturaId) {
     const { data: novaAssinatura, error: assinaturaError } = await supabaseAdmin
@@ -51,14 +74,12 @@ export async function renovarAssinatura(): Promise<RenovarState> {
     assinaturaId = novaAssinatura.id;
   }
 
-  // Sem UI de ambiente aqui (so existe uma conta, a da propria plataforma) -
-  // usa producao por padrao; ASAAS_PLATFORM_SANDBOX=true muda pra sandbox
-  // durante testes.
-  const baseUrl =
-    process.env.ASAAS_PLATFORM_SANDBOX === "true"
-      ? "https://sandbox.asaas.com/api/v3"
-      : "https://api.asaas.com/v3";
-  const gateway = new AsaasGateway(apiKey, baseUrl);
+  const { apiKey } = descriptografarCredenciais(gatewayPlataforma.dados_criptografados);
+  const gateway = instanciarGateway(
+    gatewayPlataforma.tipo as "asaas" | "stripe" | "mercadopago",
+    apiKey,
+    gatewayPlataforma.ambiente
+  );
 
   try {
     const cobranca = await gateway.criarCobranca({
@@ -75,7 +96,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
       empresa_id: ctx.empresaId,
       valor: Number(plano.valor_mensal),
       status: "pendente",
-      gateway: "asaas",
+      gateway: gatewayPlataforma.tipo,
       transacao_id: cobranca.transacaoId,
     });
 
