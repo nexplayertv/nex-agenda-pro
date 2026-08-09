@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { registrarAtividade } from "@/lib/audit/log-atividade";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type ActionState = { error: string | null };
@@ -107,8 +106,21 @@ export async function alternarAtivaEmpresa(empresaId: string, ativa: boolean): P
   return { error: null };
 }
 
-export type RedefinirSenhaAdminState = { error: string | null; email?: string };
+export type RedefinirSenhaAdminState = { error: string | null; email?: string; senha?: string };
 
+function gerarSenhaTemporaria(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let senha = "";
+  for (let i = 0; i < 10; i++) {
+    senha += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return senha;
+}
+
+// Troca a senha diretamente pela API admin do Supabase, sem depender de
+// e-mail (link de redefinicao por e-mail depende de SMTP, DNS e do link
+// PKCE funcionando ponta a ponta - muita coisa que pode falhar quando o
+// objetivo e so destravar o acesso de alguem rapido).
 export async function redefinirSenhaAdministrador(
   empresaId: string
 ): Promise<RedefinirSenhaAdminState> {
@@ -118,29 +130,27 @@ export async function redefinirSenhaAdministrador(
   const supabase = createServiceClient();
   const { data: membros } = await supabase
     .from("usuarios_empresas")
-    .select("usuarios(email), cargos(cargo_base)")
+    .select("usuario_id, usuarios(email), cargos(cargo_base)")
     .eq("empresa_id", empresaId)
     .eq("status", "ativo");
 
   const administrador = (
-    membros as unknown as { usuarios: { email: string } | null; cargos: { cargo_base: string } | null }[] | null
+    membros as unknown as
+      | { usuario_id: string; usuarios: { email: string } | null; cargos: { cargo_base: string } | null }[]
+      | null
   )?.find((m) => m.cargos?.cargo_base === "administrador");
 
   const email = administrador?.usuarios?.email;
-  if (!email) {
+  if (!administrador || !email) {
     return { error: "Nenhum administrador ativo encontrado para essa empresa." };
   }
 
-  // resetPasswordForEmail precisa do cliente normal (anon key) - o cliente
-  // de service role e para operacoes administrativas no banco, e nao se
-  // comporta como o navegador do usuario nesse endpoint publico do Auth.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const supabaseAuth = await createClient();
-  const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
-    redirectTo: `${appUrl}/redefinir-senha`,
+  const senha = gerarSenhaTemporaria();
+  const { error } = await supabase.auth.admin.updateUserById(administrador.usuario_id, {
+    password: senha,
   });
 
-  if (error) return { error: "Não foi possível enviar o link de redefinição." };
+  if (error) return { error: "Não foi possível redefinir a senha." };
 
   await registrarAtividade({
     empresaId,
@@ -151,7 +161,7 @@ export async function redefinirSenhaAdministrador(
     registroId: empresaId,
   });
 
-  return { error: null, email };
+  return { error: null, email, senha };
 }
 
 export async function excluirEmpresa(empresaId: string): Promise<ActionState> {

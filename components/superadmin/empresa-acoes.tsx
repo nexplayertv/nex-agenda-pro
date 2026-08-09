@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { CalendarPlus, KeyRound, MoreHorizontal, Power, Trash2 } from "lucide-react";
+import { CalendarPlus, MoreHorizontal, Power, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +26,10 @@ import { Label } from "@/components/ui/label";
 import {
   alternarAtivaEmpresa,
   excluirEmpresa,
-  redefinirSenhaAdministrador,
   renovarManualmente,
 } from "@/app/(superadmin)/empresas/actions";
 import { EditarVencimentoDialog } from "./editar-vencimento-dialog";
+import { RedefinirSenhaAdminDialog } from "./redefinir-senha-admin-dialog";
 
 export function EmpresaAcoes({
   empresaId,
@@ -68,18 +68,7 @@ export function EmpresaAcoes({
           Renovar +30 dias
         </DropdownMenuItem>
         <EditarVencimentoDialog empresaId={empresaId} vencimentoAtual={vencimentoAtual} />
-        <DropdownMenuItem
-          onClick={() =>
-            startTransition(async () => {
-              const res = await redefinirSenhaAdministrador(empresaId);
-              if (res.error) toast.error(res.error);
-              else toast.success(`Link de redefinição enviado para ${res.email}.`);
-            })
-          }
-        >
-          <KeyRound />
-          Redefinir senha do admin
-        </DropdownMenuItem>
+        <RedefinirSenhaAdminDialog empresaId={empresaId} nome={nome} />
         <DropdownMenuItem
           variant={ativa ? "destructive" : "default"}
           onClick={() =>
