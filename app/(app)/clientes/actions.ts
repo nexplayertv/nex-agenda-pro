@@ -112,6 +112,19 @@ export async function excluirCliente(clienteId: string): Promise<{ error: string
   await requirePermission(ctx.empresaId, "clientes", "excluir");
 
   const supabase = await createClient();
+
+  const { data: cliente } = await supabase
+    .from("clientes")
+    .select("status")
+    .eq("id", clienteId)
+    .eq("empresa_id", ctx.empresaId)
+    .single();
+
+  if (!cliente) return { error: "Cliente não encontrado." };
+  if (cliente.status !== "inativo") {
+    return { error: "Desative o cliente antes de excluir." };
+  }
+
   const { error } = await supabase
     .from("clientes")
     .delete()

@@ -102,6 +102,7 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
               {cliente.status === "ativo" ? "Desativar" : "Reativar"}
             </DropdownMenuItem>
           </Can>
+          {cliente.status === "inativo" && (
           <Can recurso="clientes" acao="excluir">
             <AlertDialog>
               <AlertDialogTrigger
@@ -145,6 +146,7 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
               </AlertDialogContent>
             </AlertDialog>
           </Can>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     );
