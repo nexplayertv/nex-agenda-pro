@@ -106,6 +106,49 @@ export async function alternarAtivaEmpresa(empresaId: string, ativa: boolean): P
   return { error: null };
 }
 
+export type RedefinirSenhaAdminState = { error: string | null; email?: string };
+
+export async function redefinirSenhaAdministrador(
+  empresaId: string
+): Promise<RedefinirSenhaAdminState> {
+  const ctx = await exigirSuperadmin().catch(() => null);
+  if (!ctx) return { error: "Acesso restrito." };
+
+  const supabase = createServiceClient();
+  const { data: membros } = await supabase
+    .from("usuarios_empresas")
+    .select("usuarios(email), cargos(cargo_base)")
+    .eq("empresa_id", empresaId)
+    .eq("status", "ativo");
+
+  const administrador = (
+    membros as unknown as { usuarios: { email: string } | null; cargos: { cargo_base: string } | null }[] | null
+  )?.find((m) => m.cargos?.cargo_base === "administrador");
+
+  const email = administrador?.usuarios?.email;
+  if (!email) {
+    return { error: "Nenhum administrador ativo encontrado para essa empresa." };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${appUrl}/redefinir-senha`,
+  });
+
+  if (error) return { error: "Não foi possível enviar o link de redefinição." };
+
+  await registrarAtividade({
+    empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: "superadmin",
+    acao: "redefinir_senha_admin",
+    recurso: "empresas",
+    registroId: empresaId,
+  });
+
+  return { error: null, email };
+}
+
 export async function excluirEmpresa(empresaId: string): Promise<ActionState> {
   const ctx = await exigirSuperadmin().catch(() => null);
   if (!ctx) return { error: "Acesso restrito." };

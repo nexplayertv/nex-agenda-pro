@@ -71,11 +71,22 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Troca do "code" (PKCE) por sessao para os fluxos de redefinir senha e
+  // aceitar convite. Precisa acontecer aqui, no proxy - se feito dentro de
+  // um Server Component (como antes), o cookie de sessao nao e persistido
+  // de verdade (Server Component nao pode escrever cookies), entao a
+  // pagina parecia logada mas a Server Action seguinte via "sessao
+  // invalida" ao tentar trocar a senha.
+  const code = searchParams.get("code");
+  if (code && (pathname === "/redefinir-senha" || pathname.startsWith("/convite/"))) {
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();

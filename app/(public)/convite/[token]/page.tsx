@@ -10,19 +10,14 @@ import {
 
 export default async function ConvitePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ code?: string }>;
 }) {
   const { token } = await params;
-  const { code } = await searchParams;
 
+  // A troca do "code" pela sessao ja aconteceu no proxy.ts (precisa ser
+  // la, e nao aqui, pra persistir o cookie de sessao corretamente).
   const supabase = await createClient();
-
-  if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
-  }
 
   const {
     data: { user },

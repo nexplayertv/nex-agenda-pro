@@ -8,18 +8,10 @@ import {
 } from "@/components/ui/card";
 import { RedefinirSenhaForm } from "./redefinir-senha-form";
 
-export default async function RedefinirSenhaPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ code?: string }>;
-}) {
-  const { code } = await searchParams;
-
+export default async function RedefinirSenhaPage() {
+  // A troca do "code" pela sessao ja aconteceu no proxy.ts (precisa ser
+  // la, e nao aqui, pra persistir o cookie de sessao corretamente).
   const supabase = await createClient();
-
-  if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
-  }
 
   const {
     data: { user },
