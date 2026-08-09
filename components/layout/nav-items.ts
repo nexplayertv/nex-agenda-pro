@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Bell,
   BarChart3,
+  Receipt,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -40,5 +41,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/mensagens", label: "Mensagens e templates", icon: MessageSquare, recurso: "mensagens" },
   { href: "/notificacoes", label: "Notificações", icon: Bell, recurso: "notificacoes" },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3, recurso: "relatorios" },
+  { href: "/assinatura", label: "Plano e renovação", icon: Receipt, recurso: "configuracoes" },
   { href: "/configuracoes", label: "Configurações", icon: Settings, recurso: "configuracoes" },
 ];

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!pagamento) {
+      await processarPagamentoSaas(supabase, cobranca.id, payload.event);
       await marcarProcessado(supabase, webhook?.id, "ok");
       return NextResponse.json({ received: true });
     }
@@ -69,6 +70,51 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     await marcarProcessado(supabase, webhook?.id, "erro", error);
     return NextResponse.json({ error: "Erro ao processar webhook" }, { status: 500 });
+  }
+}
+
+// Cobranca de assinatura da plataforma (empresa pagando o AgendaPro), não de
+// entrada de agendamento. Identificada por não existir em `pagamentos` mas
+// existir em `pagamentos_saas` com o mesmo transacao_id.
+async function processarPagamentoSaas(
+  supabase: ReturnType<typeof createServiceClient>,
+  transacaoId: string,
+  evento: string
+) {
+  const { data: pagamentoSaas } = await supabase
+    .from("pagamentos_saas")
+    .select("id, assinatura_id, empresa_id")
+    .eq("transacao_id", transacaoId)
+    .maybeSingle();
+
+  if (!pagamentoSaas) return;
+
+  const statusPagos = ["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED", "PAYMENT_RECEIVED_IN_CASH"];
+  const statusRecusados = ["PAYMENT_OVERDUE", "PAYMENT_DELETED"];
+
+  if (statusPagos.includes(evento)) {
+    const novoVencimento = new Date(Date.now() + 30 * 86_400_000).toISOString();
+
+    await supabase
+      .from("pagamentos_saas")
+      .update({ status: "pago", data_pagamento: new Date().toISOString() })
+      .eq("id", pagamentoSaas.id);
+
+    await supabase
+      .from("assinaturas_saas")
+      .update({
+        status: "ativa",
+        periodo_atual_inicio: new Date().toISOString(),
+        periodo_atual_fim: novoVencimento,
+      })
+      .eq("id", pagamentoSaas.assinatura_id);
+
+    await supabase
+      .from("empresas")
+      .update({ status_assinatura: "ativa", trial_expira_em: novoVencimento, ativa: true })
+      .eq("id", pagamentoSaas.empresa_id);
+  } else if (statusRecusados.includes(evento)) {
+    await supabase.from("pagamentos_saas").update({ status: "falhou" }).eq("id", pagamentoSaas.id);
   }
 }
 

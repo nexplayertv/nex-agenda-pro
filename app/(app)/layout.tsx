@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
+import { AcessoBloqueado } from "@/components/layout/acesso-bloqueado";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -22,11 +23,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let empresaNome = "AgendaPro";
   let notificacoes: { id: string; titulo: string; mensagem: string; lida: boolean; link: string | null; criado_em: string }[] = [];
   let naoLidas = 0;
+  let vencimento: string | null = null;
+  let diasRestantes: number | null = null;
 
   if (ctx.empresaId) {
     const supabase = await createClient();
     const [{ data: empresa }, { data: notificacoesData }, { count }] = await Promise.all([
-      supabase.from("empresas").select("nome").eq("id", ctx.empresaId).single(),
+      supabase
+        .from("empresas")
+        .select("nome, trial_expira_em")
+        .eq("id", ctx.empresaId)
+        .single(),
       supabase
         .from("notificacoes")
         .select("id, titulo, mensagem, lida, link, criado_em")
@@ -44,6 +51,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     empresaNome = empresa?.nome ?? empresaNome;
     notificacoes = notificacoesData ?? [];
     naoLidas = count ?? 0;
+    vencimento = empresa?.trial_expira_em ?? null;
+
+    if (vencimento) {
+      diasRestantes = Math.ceil(
+        (new Date(vencimento).getTime() - new Date().getTime()) / 86_400_000
+      );
+
+      if (diasRestantes < 0 && !ctx.isSuperadmin) {
+        return <AcessoBloqueado vencimento={vencimento} />;
+      }
+    }
   }
 
   return (
@@ -61,6 +79,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             fotoUrl={ctx.fotoUrl}
             notificacoes={notificacoes}
             naoLidas={naoLidas}
+            vencimento={vencimento}
+            diasRestantes={diasRestantes}
           />
           <main className="flex-1 space-y-4 p-4 md:p-6">{children}</main>
         </SidebarInset>

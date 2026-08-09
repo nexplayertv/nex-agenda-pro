@@ -12,7 +12,10 @@ export type CriarCobrancaInput = {
   clienteEmail?: string | null;
   clienteWhatsapp?: string | null;
   clienteCpfCnpj?: string | null;
-  referenciaExterna: string; // agendamento_id
+  referenciaExterna: string; // agendamento_id, ou "assinatura:<empresaId>" para cobranca de assinatura da plataforma
+  // Pix exige CPF/CNPJ do cliente (ver AsaasGateway); "undefined" deixa o
+  // proprio checkout hospedado do gateway perguntar a forma de pagamento.
+  billingType?: "PIX" | "UNDEFINED";
 };
 
 export type CriarCobrancaResultado = {

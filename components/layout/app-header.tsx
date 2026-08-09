@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePermissions } from "@/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AssinaturaBadge } from "@/components/layout/assinatura-badge";
 import { NotificationBell, type NotificacaoResumo } from "./notification-bell";
 
 export function AppHeader({
@@ -27,12 +28,16 @@ export function AppHeader({
   fotoUrl,
   notificacoes,
   naoLidas,
+  vencimento,
+  diasRestantes,
 }: {
   nome: string;
   email: string;
   fotoUrl: string | null;
   notificacoes: NotificacaoResumo[];
   naoLidas: number;
+  vencimento?: string | null;
+  diasRestantes?: number | null;
 }) {
   const { can, isSuperadmin } = usePermissions();
   const router = useRouter();
@@ -54,6 +59,9 @@ export function AppHeader({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {vencimento && diasRestantes !== null && diasRestantes !== undefined && (
+          <AssinaturaBadge vencimento={vencimento} diasRestantes={diasRestantes} />
+        )}
         <ThemeToggle />
         {can("notificacoes", "visualizar") && (
           <NotificationBell notificacoes={notificacoes} naoLidas={naoLidas} />

@@ -84,7 +84,7 @@ export class AsaasGateway implements PaymentGateway {
       method: "POST",
       body: JSON.stringify({
         customer: customerId,
-        billingType: "PIX",
+        billingType: input.billingType ?? "PIX",
         value: input.valor,
         description: input.descricao,
         externalReference: input.referenciaExterna,
