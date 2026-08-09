@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Search } from "lucide-react";
+import { MapPin, MessageCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { corContrastante } from "@/lib/utils-domain/cor";
 import { createServiceClient } from "@/lib/supabase/service";
 import { BookingFlow } from "@/components/booking/booking-flow";
@@ -29,7 +30,7 @@ export default async function AgendarPage({
       supabase
         .from("configuracoes_empresas")
         .select(
-          "descricao, endereco, telefone, whatsapp, cor_primaria, logo_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
+          "descricao, endereco, telefone, whatsapp, redes_sociais, cor_primaria, logo_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
         )
         .eq("empresa_id", empresa.id)
         .single(),
@@ -104,6 +105,31 @@ export default async function AgendarPage({
   // contraste garantido - usamos a mesma cor de texto com opacidade.
   const classeTextoSecundario = corPrimaria ? "opacity-80" : "text-muted-foreground";
 
+  const redesSociais = (config?.redes_sociais as { instagram?: string; facebook?: string } | null) ?? {};
+  const linksContato = [
+    config?.endereco
+      ? {
+          label: "Localização",
+          icone: MapPin,
+          href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.endereco)}`,
+        }
+      : null,
+    config?.whatsapp
+      ? {
+          label: "WhatsApp",
+          icone: MessageCircle,
+          href: `https://wa.me/55${config.whatsapp.replace(/\D/g, "")}`,
+        }
+      : null,
+    redesSociais.instagram
+      ? {
+          label: "Instagram",
+          icone: InstagramIcon,
+          href: `https://instagram.com/${redesSociais.instagram.replace(/^@/, "")}`,
+        }
+      : null,
+  ].filter((l): l is NonNullable<typeof l> => l !== null);
+
   return (
     <div className="min-h-screen w-full" style={estiloFundo}>
       <div className="mx-auto max-w-lg space-y-6 py-8">
@@ -124,6 +150,23 @@ export default async function AgendarPage({
           )}
           {config?.endereco && (
             <p className={`text-xs ${classeTextoSecundario}`}>{config.endereco}</p>
+          )}
+
+          {linksContato.length > 0 && (
+            <div className="mt-3 flex justify-center gap-2">
+              {linksContato.map((l) => (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={l.label}
+                  className="flex size-9 items-center justify-center rounded-full border border-current opacity-90 transition-opacity hover:opacity-100"
+                >
+                  <l.icone className="size-4" />
+                </a>
+              ))}
+            </div>
           )}
         </div>
 
