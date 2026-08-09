@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePermissions } from "@/hooks/use-permissions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AlterarSenhaDialog } from "@/components/layout/alterar-senha-dialog";
 import { AssinaturaBadge } from "@/components/layout/assinatura-badge";
 import { NotificationBell, type NotificacaoResumo } from "./notification-bell";
 
@@ -86,6 +87,7 @@ export function AppHeader({
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link href="/configuracoes">Configurações</Link>} />
+            <AlterarSenhaDialog />
             {isSuperadmin && (
               <DropdownMenuItem
                 render={
