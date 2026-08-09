@@ -17,7 +17,7 @@ export default async function ProfissionaisPage() {
     const { data } = await supabase
       .from("profissionais")
       .select(
-        "id, nome, telefone, email, especialidades, biografia, comissao_percentual, cor_agenda, status, horarios_funcionamento(dia_semana, hora_inicio, hora_fim)"
+        "id, nome, telefone, email, especialidades, biografia, comissao_percentual, cor_agenda, foto_url, status, horarios_funcionamento(dia_semana, hora_inicio, hora_fim)"
       )
       .eq("empresa_id", ctx.empresaId)
       .order("nome");

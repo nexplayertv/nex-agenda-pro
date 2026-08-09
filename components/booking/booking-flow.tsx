@@ -215,9 +215,20 @@ export function BookingFlow({
                 setEtapa("horario");
               }}
             >
-              <CardContent className="py-4">
-                <p className="font-medium">{p.nome}</p>
-                {p.biografia && <p className="text-sm text-muted-foreground">{p.biografia}</p>}
+              <CardContent className="flex items-center gap-3 py-4">
+                {p.foto_url && (
+                  <Image
+                    src={p.foto_url}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="size-12 shrink-0 rounded-full object-cover"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-medium">{p.nome}</p>
+                  {p.biografia && <p className="text-sm text-muted-foreground">{p.biografia}</p>}
+                </div>
               </CardContent>
             </Card>
           ))}

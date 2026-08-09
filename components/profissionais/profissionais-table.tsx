@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { MoreHorizontal, Pencil, Power } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,6 +107,7 @@ export function ProfissionaisTable({ profissionais }: { profissionais: Profissio
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="size-7" style={{ backgroundColor: p.cor_agenda }}>
+                      {p.foto_url && <AvatarImage src={p.foto_url} alt={p.nome} />}
                       <AvatarFallback className="text-white" style={{ backgroundColor: p.cor_agenda }}>
                         {p.nome[0]?.toUpperCase()}
                       </AvatarFallback>
@@ -137,6 +138,7 @@ export function ProfissionaisTable({ profissionais }: { profissionais: Profissio
         {profissionais.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-lg border p-3">
             <Avatar className="size-9 shrink-0" style={{ backgroundColor: p.cor_agenda }}>
+              {p.foto_url && <AvatarImage src={p.foto_url} alt={p.nome} />}
               <AvatarFallback className="text-white" style={{ backgroundColor: p.cor_agenda }}>
                 {p.nome[0]?.toUpperCase()}
               </AvatarFallback>

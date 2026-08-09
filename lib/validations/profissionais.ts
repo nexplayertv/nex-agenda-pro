@@ -8,6 +8,7 @@ export const profissionalSchema = z.object({
   biografia: z.string().trim().optional().or(z.literal("")),
   comissaoPercentual: z.coerce.number().min(0).max(100).optional(),
   corAgenda: z.string().trim().min(1),
+  fotoUrl: z.url("URL inválida.").optional().or(z.literal("")),
 });
 
 export type ProfissionalInput = z.infer<typeof profissionalSchema>;

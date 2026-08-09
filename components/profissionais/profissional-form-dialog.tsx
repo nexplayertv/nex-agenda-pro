@@ -33,6 +33,7 @@ export type ProfissionalExistente = {
   biografia: string | null;
   comissao_percentual: number | null;
   cor_agenda: string;
+  foto_url: string | null;
 };
 
 const initialState: ActionState = { error: null };
@@ -130,6 +131,15 @@ export function ProfissionalFormDialog({
                     name="especialidades"
                     defaultValue={profissional?.especialidades?.join(", ") ?? ""}
                     placeholder="Alongamento em gel, Nail art"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fotoUrl">URL da foto (opcional)</Label>
+                  <Input
+                    id="fotoUrl"
+                    name="fotoUrl"
+                    placeholder="https://..."
+                    defaultValue={profissional?.foto_url ?? ""}
                   />
                 </div>
                 <div className="space-y-2">

@@ -18,6 +18,7 @@ function parseProfissional(formData: FormData) {
     biografia: formData.get("biografia") ?? "",
     comissaoPercentual: formData.get("comissaoPercentual") || 0,
     corAgenda: formData.get("corAgenda") || "#7C3AED",
+    fotoUrl: formData.get("fotoUrl") ?? "",
   });
 }
 
@@ -56,6 +57,7 @@ export async function criarProfissional(
       biografia: parsed.biografia || null,
       comissao_percentual: parsed.comissaoPercentual ?? 0,
       cor_agenda: parsed.corAgenda,
+      foto_url: parsed.fotoUrl || null,
     })
     .select("id")
     .single();
@@ -104,6 +106,7 @@ export async function editarProfissional(
       biografia: parsed.biografia || null,
       comissao_percentual: parsed.comissaoPercentual ?? 0,
       cor_agenda: parsed.corAgenda,
+      foto_url: parsed.fotoUrl || null,
     })
     .eq("id", profissionalId)
     .eq("empresa_id", ctx.empresaId);
