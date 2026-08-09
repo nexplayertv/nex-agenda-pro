@@ -57,6 +57,9 @@ export default async function ConfiguracoesPage() {
                 endereco={config.endereco}
                 instagram={redesSociais.instagram ?? null}
                 facebook={redesSociais.facebook ?? null}
+                exibirLocalizacao={config.exibir_localizacao}
+                exibirWhatsappPublico={config.exibir_whatsapp_publico}
+                exibirInstagram={config.exibir_instagram}
               />
             </TabsContent>
 

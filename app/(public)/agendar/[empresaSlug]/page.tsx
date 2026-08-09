@@ -30,7 +30,7 @@ export default async function AgendarPage({
       supabase
         .from("configuracoes_empresas")
         .select(
-          "descricao, endereco, telefone, whatsapp, redes_sociais, cor_primaria, logo_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento"
+          "descricao, endereco, telefone, whatsapp, redes_sociais, cor_primaria, logo_url, catalogo_publico_ativo, ocultar_valores_catalogo, percentual_entrada, politica_cancelamento, exibir_localizacao, exibir_whatsapp_publico, exibir_instagram"
         )
         .eq("empresa_id", empresa.id)
         .single(),
@@ -107,21 +107,21 @@ export default async function AgendarPage({
 
   const redesSociais = (config?.redes_sociais as { instagram?: string; facebook?: string } | null) ?? {};
   const linksContato = [
-    config?.endereco
+    config?.endereco && config?.exibir_localizacao
       ? {
           label: "Localização",
           icone: MapPin,
           href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(config.endereco)}`,
         }
       : null,
-    config?.whatsapp
+    config?.whatsapp && config?.exibir_whatsapp_publico
       ? {
           label: "WhatsApp",
           icone: MessageCircle,
           href: `https://wa.me/55${config.whatsapp.replace(/\D/g, "")}`,
         }
       : null,
-    redesSociais.instagram
+    redesSociais.instagram && config?.exibir_instagram
       ? {
           label: "Instagram",
           icone: InstagramIcon,

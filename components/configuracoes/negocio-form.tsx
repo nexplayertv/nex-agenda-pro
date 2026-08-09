@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { SEGMENTOS } from "@/lib/utils-domain/segmentos";
 import { salvarNegocio, type ActionState } from "@/app/(app)/configuracoes/actions";
@@ -27,6 +28,9 @@ export function NegocioForm({
   endereco,
   instagram,
   facebook,
+  exibirLocalizacao,
+  exibirWhatsappPublico,
+  exibirInstagram,
 }: {
   nome: string;
   segmento: string;
@@ -37,6 +41,9 @@ export function NegocioForm({
   endereco: string | null;
   instagram: string | null;
   facebook: string | null;
+  exibirLocalizacao: boolean;
+  exibirWhatsappPublico: boolean;
+  exibirInstagram: boolean;
 }) {
   const [state, formAction, pending] = useActionState(salvarNegocio, initialState);
 
@@ -81,6 +88,10 @@ export function NegocioForm({
         <div className="space-y-2">
           <Label htmlFor="whatsapp">WhatsApp</Label>
           <Input id="whatsapp" name="whatsapp" defaultValue={whatsapp ?? ""} />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch name="exibirWhatsappPublico" defaultChecked={exibirWhatsappPublico} size="sm" />
+            Mostrar ícone no link público
+          </label>
         </div>
       </div>
 
@@ -92,6 +103,10 @@ export function NegocioForm({
         <div className="space-y-2">
           <Label htmlFor="endereco">Endereço</Label>
           <Input id="endereco" name="endereco" defaultValue={endereco ?? ""} />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch name="exibirLocalizacao" defaultChecked={exibirLocalizacao} size="sm" />
+            Mostrar ícone no link público
+          </label>
         </div>
       </div>
 
@@ -99,6 +114,10 @@ export function NegocioForm({
         <div className="space-y-2">
           <Label htmlFor="instagram">Instagram</Label>
           <Input id="instagram" name="instagram" defaultValue={instagram ?? ""} />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch name="exibirInstagram" defaultChecked={exibirInstagram} size="sm" />
+            Mostrar ícone no link público
+          </label>
         </div>
         <div className="space-y-2">
           <Label htmlFor="facebook">Facebook</Label>

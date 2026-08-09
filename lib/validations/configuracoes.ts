@@ -10,6 +10,9 @@ export const configuracoesNegocioSchema = z.object({
   endereco: z.string().trim().optional().or(z.literal("")),
   instagram: z.string().trim().optional().or(z.literal("")),
   facebook: z.string().trim().optional().or(z.literal("")),
+  exibirLocalizacao: z.coerce.boolean().default(false),
+  exibirWhatsappPublico: z.coerce.boolean().default(false),
+  exibirInstagram: z.coerce.boolean().default(false),
 });
 
 export const configuracoesAparenciaSchema = z.object({

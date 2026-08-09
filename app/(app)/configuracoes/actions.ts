@@ -31,6 +31,9 @@ export async function salvarNegocio(
     endereco: formData.get("endereco") ?? "",
     instagram: formData.get("instagram") ?? "",
     facebook: formData.get("facebook") ?? "",
+    exibirLocalizacao: formData.get("exibirLocalizacao"),
+    exibirWhatsappPublico: formData.get("exibirWhatsappPublico"),
+    exibirInstagram: formData.get("exibirInstagram"),
   });
 
   if (!parsed.success) {
@@ -55,6 +58,9 @@ export async function salvarNegocio(
       email: resto.email || null,
       endereco: resto.endereco || null,
       redes_sociais: { instagram: resto.instagram || null, facebook: resto.facebook || null },
+      exibir_localizacao: resto.exibirLocalizacao,
+      exibir_whatsapp_publico: resto.exibirWhatsappPublico,
+      exibir_instagram: resto.exibirInstagram,
     })
     .eq("empresa_id", ctx.empresaId);
 
