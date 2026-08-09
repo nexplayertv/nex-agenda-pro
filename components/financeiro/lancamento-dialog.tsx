@@ -53,6 +53,8 @@ const CATEGORIAS_DESPESA = [
 
 const CATEGORIAS_RECEITA = ["Entrada de agendamento", "Venda avulsa", "Produto", "Outros"];
 
+const FORMAS_PAGAMENTO = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito"];
+
 export function LancamentoDialog({
   tipo,
   lancamento,
@@ -154,12 +156,22 @@ export function LancamentoDialog({
             {tipo === "receita" && (
               <div className="space-y-2">
                 <Label htmlFor="formaPagamento">Forma de pagamento</Label>
-                <Input
-                  id="formaPagamento"
+                <Select
+                  items={Object.fromEntries(FORMAS_PAGAMENTO.map((f) => [f, f]))}
                   name="formaPagamento"
-                  placeholder="Dinheiro, Pix..."
-                  defaultValue={lancamento?.forma_pagamento ?? ""}
-                />
+                  defaultValue={lancamento?.forma_pagamento ?? undefined}
+                >
+                  <SelectTrigger id="formaPagamento" className="w-full">
+                    <SelectValue placeholder="Selecione (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FORMAS_PAGAMENTO.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
