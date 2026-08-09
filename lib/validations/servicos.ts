@@ -10,6 +10,7 @@ export const servicoSchema = z.object({
   destaque: z.coerce.boolean().default(false),
   visivelCatalogo: z.coerce.boolean().default(true),
   observacoes: z.string().trim().optional().or(z.literal("")),
+  fotoUrl: z.url("URL inválida.").optional().or(z.literal("")),
 });
 
 export type ServicoInput = z.infer<typeof servicoSchema>;

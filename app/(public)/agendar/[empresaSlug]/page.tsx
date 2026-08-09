@@ -36,7 +36,7 @@ export default async function AgendarPage({
         .single(),
       supabase
         .from("servicos")
-        .select("id, nome, descricao, valor, duracao_minutos, profissionais_servicos(profissional_id, profissionais(id, nome, foto_url, biografia, status))")
+        .select("id, nome, descricao, valor, duracao_minutos, foto_url, profissionais_servicos(profissional_id, profissionais(id, nome, foto_url, biografia, status))")
         .eq("empresa_id", empresa.id)
         .eq("status", "ativo")
         .eq("visivel_catalogo", true)
@@ -80,6 +80,7 @@ export default async function AgendarPage({
     descricao: s.descricao,
     valor: Number(s.valor),
     duracao_minutos: s.duracao_minutos,
+    foto_url: s.foto_url,
     ocultar_valor: config.ocultar_valores_catalogo,
   }));
 

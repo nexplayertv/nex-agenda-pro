@@ -45,6 +45,7 @@ export type ServicoExistente = {
   destaque: boolean;
   visivel_catalogo: boolean;
   observacoes: string | null;
+  foto_url: string | null;
   profissionaisIds?: string[];
 };
 
@@ -188,6 +189,16 @@ export function ServicoFormDialog({
                 name="descricao"
                 defaultValue={servico?.descricao ?? ""}
                 rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fotoUrl">URL da foto (opcional)</Label>
+              <Input
+                id="fotoUrl"
+                name="fotoUrl"
+                placeholder="https://..."
+                defaultValue={servico?.foto_url ?? ""}
               />
             </div>
 

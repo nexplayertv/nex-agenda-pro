@@ -18,7 +18,7 @@ export default async function ServicosPage() {
         supabase
           .from("servicos")
           .select(
-            "id, categoria_id, nome, descricao, valor, duracao_minutos, intervalo_minutos, destaque, visivel_catalogo, observacoes, status, categorias_servicos(nome), profissionais_servicos(profissional_id)"
+            "id, categoria_id, nome, descricao, valor, duracao_minutos, intervalo_minutos, destaque, visivel_catalogo, observacoes, foto_url, status, categorias_servicos(nome), profissionais_servicos(profissional_id)"
           )
           .eq("empresa_id", ctx.empresaId)
           .order("ordem"),

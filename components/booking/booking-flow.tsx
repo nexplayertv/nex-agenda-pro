@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
+import Image from "next/image";
 import QRCode from "qrcode";
 import { ArrowLeft, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ type Servico = {
   descricao: string | null;
   valor: number;
   duracao_minutos: number;
+  foto_url: string | null;
   ocultar_valor: boolean;
 };
 type Profissional = { id: string; nome: string; foto_url: string | null; biografia: string | null };
@@ -170,19 +172,32 @@ export function BookingFlow({
                 setEtapa("profissional");
               }}
             >
-              <CardContent className="flex items-center justify-between py-4">
-                <div>
-                  <p className="font-medium">{s.nome}</p>
-                  {s.descricao && (
-                    <p className="text-sm text-muted-foreground">{s.descricao}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {formatarDuracao(s.duracao_minutos)}
-                  </p>
-                </div>
-                {!s.ocultar_valor && (
-                  <Badge variant="secondary">{formatarMoeda(s.valor)}</Badge>
+              <CardContent className="flex items-center gap-3 py-4">
+                {s.foto_url && (
+                  <Image
+                    src={s.foto_url}
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="size-16 shrink-0 rounded-lg object-cover"
+                  />
                 )}
+                <div className="flex flex-1 items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium">{s.nome}</p>
+                    {s.descricao && (
+                      <p className="text-sm text-muted-foreground">{s.descricao}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {formatarDuracao(s.duracao_minutos)}
+                    </p>
+                  </div>
+                  {!s.ocultar_valor && (
+                    <Badge variant="secondary" className="shrink-0">
+                      {formatarMoeda(s.valor)}
+                    </Badge>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}

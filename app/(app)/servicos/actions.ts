@@ -20,6 +20,7 @@ function parseServico(formData: FormData) {
     destaque: formData.get("destaque"),
     visivelCatalogo: formData.get("visivelCatalogo"),
     observacoes: formData.get("observacoes") ?? "",
+    fotoUrl: formData.get("fotoUrl") ?? "",
   });
 }
 
@@ -53,6 +54,7 @@ export async function criarServico(
       destaque: parsed.destaque,
       visivel_catalogo: parsed.visivelCatalogo,
       observacoes: parsed.observacoes || null,
+      foto_url: parsed.fotoUrl || null,
     })
     .select("id")
     .single();
@@ -103,6 +105,7 @@ export async function editarServico(
       destaque: parsed.destaque,
       visivel_catalogo: parsed.visivelCatalogo,
       observacoes: parsed.observacoes || null,
+      foto_url: parsed.fotoUrl || null,
     })
     .eq("id", servicoId)
     .eq("empresa_id", ctx.empresaId);

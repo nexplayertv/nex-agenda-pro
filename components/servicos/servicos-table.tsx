@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Image from "next/image";
 import { MoreHorizontal, Pencil, Star, EyeOff, Power } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,11 +120,22 @@ export function ServicosTable({
             {servicos.map((servico) => (
               <TableRow key={servico.id}>
                 <TableCell>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    {servico.destaque && (
-                      <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                  <div className="flex items-center gap-2">
+                    {servico.foto_url && (
+                      <Image
+                        src={servico.foto_url}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="size-8 shrink-0 rounded-md object-cover"
+                      />
                     )}
-                    {servico.nome}
+                    <div className="flex items-center gap-1.5 font-medium">
+                      {servico.destaque && (
+                        <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                      )}
+                      {servico.nome}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>{servico.categorias_servicos?.nome ?? "—"}</TableCell>
@@ -154,11 +166,22 @@ export function ServicosTable({
         {servicos.map((servico) => (
           <div key={servico.id} className="space-y-2 rounded-lg border p-3">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5 font-medium">
-                {servico.destaque && (
-                  <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+              <div className="flex min-w-0 items-center gap-2">
+                {servico.foto_url && (
+                  <Image
+                    src={servico.foto_url}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="size-8 shrink-0 rounded-md object-cover"
+                  />
                 )}
-                <span className="truncate">{servico.nome}</span>
+                <div className="flex min-w-0 items-center gap-1.5 font-medium">
+                  {servico.destaque && (
+                    <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+                  )}
+                  <span className="truncate">{servico.nome}</span>
+                </div>
               </div>
               {acoes(servico)}
             </div>
