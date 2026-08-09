@@ -105,6 +105,42 @@ export async function editarCliente(
   return { error: null };
 }
 
+export async function excluirCliente(clienteId: string): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "clientes", "excluir");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("clientes")
+    .delete()
+    .eq("id", clienteId)
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) {
+    if (error.code === "23503") {
+      return {
+        error:
+          "Este cliente tem agendamentos ou mensagens registradas e não pode ser excluído. Desative-o em vez disso.",
+      };
+    }
+    return { error: "Não foi possível excluir o cliente." };
+  }
+
+  await registrarAtividade({
+    empresaId: ctx.empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: ctx.cargoNome,
+    acao: "excluir",
+    recurso: "clientes",
+    registroId: clienteId,
+  });
+
+  revalidatePath("/clientes");
+  return { error: null };
+}
+
 export async function alternarStatusCliente(clienteId: string, ativo: boolean): Promise<void> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return;

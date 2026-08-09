@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MessageCircle, MoreHorizontal, Pencil, UserX, UserCheck } from "lucide-react";
+import { toast } from "sonner";
+import { MessageCircle, MoreHorizontal, Pencil, Trash2, UserX, UserCheck } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Can } from "@/hooks/use-permissions";
 import { formatarData } from "@/lib/utils-domain/masks";
-import { alternarStatusCliente } from "@/app/(app)/clientes/actions";
+import { alternarStatusCliente, excluirCliente } from "@/app/(app)/clientes/actions";
 import { ClienteFormDialog, type ClienteExistente } from "./cliente-form-dialog";
 
 export type ClienteLinha = ClienteExistente & {
@@ -89,6 +101,49 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
               {cliente.status === "ativo" ? <UserX /> : <UserCheck />}
               {cliente.status === "ativo" ? "Desativar" : "Reativar"}
             </DropdownMenuItem>
+          </Can>
+          <Can recurso="clientes" acao="excluir">
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <DropdownMenuItem
+                    closeOnClick={false}
+                    variant="destructive"
+                    render={
+                      <button type="button" className="w-full">
+                        <Trash2 />
+                        Excluir
+                      </button>
+                    }
+                  />
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir {cliente.nome}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. Se o cliente já tiver agendamentos ou
+                    mensagens registradas, a exclusão será bloqueada — nesse caso, use
+                    &quot;Desativar&quot; em vez de excluir.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() =>
+                      startTransition(async () => {
+                        const res = await excluirCliente(cliente.id);
+                        if (res.error) toast.error(res.error);
+                        else toast.success("Cliente excluído.");
+                      })
+                    }
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
