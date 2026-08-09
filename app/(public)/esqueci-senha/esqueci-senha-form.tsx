@@ -15,36 +15,12 @@ export function EsqueciSenhaForm({ whatsappSuporte }: { whatsappSuporte: string 
   const [state, action, pending] = useActionState(solicitarRedefinicao, initialState);
 
   return (
-    <>
+    <div className="space-y-4">
       {state.sucesso ? (
-        <div className="space-y-4">
-          <p className="text-sm">
-            Se esse e-mail estiver cadastrado, você vai receber um link de redefinição em
-            instantes. O e-mail pode demorar alguns minutos ou cair na caixa de spam.
-          </p>
-          {whatsappSuporte && (
-            <div className="space-y-2 rounded-lg border p-3 text-center">
-              <p className="text-sm text-muted-foreground">Não recebeu ou precisa de ajuda?</p>
-              <Button
-                variant="outline"
-                className="w-full"
-                render={
-                  <a
-                    href={whatsappLink(
-                      whatsappSuporte,
-                      "Olá! Estou tentando redefinir minha senha do AgendaPro e preciso de ajuda."
-                    )}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <MessageCircle />
-                    Falar com o suporte
-                  </a>
-                }
-              />
-            </div>
-          )}
-        </div>
+        <p className="text-sm">
+          Se esse e-mail estiver cadastrado, você vai receber um link de redefinição em
+          instantes. O e-mail pode demorar alguns minutos ou cair na caixa de spam.
+        </p>
       ) : (
         <form action={action} className="space-y-4">
           <div className="space-y-2">
@@ -57,11 +33,35 @@ export function EsqueciSenhaForm({ whatsappSuporte }: { whatsappSuporte: string 
           </Button>
         </form>
       )}
-      <div className="pt-4 text-center text-sm">
+
+      {whatsappSuporte && (
+        <div className="space-y-2 rounded-lg border p-3 text-center">
+          <p className="text-sm text-muted-foreground">Prefere não esperar pelo e-mail?</p>
+          <Button
+            variant="outline"
+            className="w-full"
+            render={
+              <a
+                href={whatsappLink(
+                  whatsappSuporte,
+                  "Olá! Estou tentando redefinir minha senha do AgendaPro e preciso de ajuda."
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle />
+                Falar com o suporte
+              </a>
+            }
+          />
+        </div>
+      )}
+
+      <div className="pt-2 text-center text-sm">
         <Link href="/login" className="text-muted-foreground hover:underline">
           Voltar para o login
         </Link>
       </div>
-    </>
+    </div>
   );
 }
