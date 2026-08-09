@@ -28,6 +28,7 @@ export function RenovarAssinaturaButton({
 }) {
   const [pending, startTransition] = useTransition();
   const [cicloId, setCicloId] = useState(ciclos[0]?.id ?? "");
+  const cicloSelecionado = ciclos.find((c) => c.id === cicloId) ?? null;
 
   function renovar() {
     if (!cicloId) return;
@@ -53,7 +54,7 @@ export function RenovarAssinaturaButton({
 
   return (
     <div className="space-y-3">
-      {ciclos.length > 1 ? (
+      {ciclos.length > 1 && (
         <div className="max-w-xs space-y-2">
           <Label htmlFor="cicloCobranca">Período</Label>
           <Select
@@ -76,7 +77,20 @@ export function RenovarAssinaturaButton({
             </SelectContent>
           </Select>
         </div>
-      ) : null}
+      )}
+
+      {cicloSelecionado && (
+        <div className="rounded-lg border p-3 text-sm">
+          <p className="text-muted-foreground">Você vai pagar</p>
+          <p className="text-lg font-semibold">
+            {formatarMoeda(cicloSelecionado.valor)}{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({cicloSelecionado.nome} · {cicloSelecionado.periodo_dias} dias)
+            </span>
+          </p>
+        </div>
+      )}
+
       <Button className={className} size={size} disabled={pending} onClick={renovar}>
         <CreditCard />
         {pending ? "Gerando cobrança..." : "Renovar agora"}
