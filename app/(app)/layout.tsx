@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
-import { AcessoBloqueado } from "@/components/layout/acesso-bloqueado";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -26,12 +25,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   let vencimento: string | null = null;
   let diasRestantes: number | null = null;
 
+  // Bloqueio de acesso (assinatura vencida ou empresa desativada pelo
+  // superadmin) e feito no proxy.ts, que redireciona pra /assinatura antes
+  // da pagina renderizar - aqui so calculamos o vencimento pra exibir no
+  // selo do cabecalho.
   if (ctx.empresaId) {
     const supabase = await createClient();
     const [{ data: empresa }, { data: notificacoesData }, { count }] = await Promise.all([
       supabase
         .from("empresas")
-        .select("nome, trial_expira_em, ativa")
+        .select("nome, trial_expira_em")
         .eq("id", ctx.empresaId)
         .single(),
       supabase
@@ -53,23 +56,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     naoLidas = count ?? 0;
     vencimento = empresa?.trial_expira_em ?? null;
 
-    if (empresa && !empresa.ativa && !ctx.isSuperadmin) {
-      const { data: config } = await supabase
-        .from("configuracoes_plataforma")
-        .select("whatsapp_suporte")
-        .eq("id", 1)
-        .single();
-      return <AcessoBloqueado motivo="suspenso" whatsappSuporte={config?.whatsapp_suporte} />;
-    }
-
     if (vencimento) {
       diasRestantes = Math.ceil(
         (new Date(vencimento).getTime() - new Date().getTime()) / 86_400_000
       );
-
-      if (diasRestantes < 0 && !ctx.isSuperadmin) {
-        return <AcessoBloqueado motivo="vencimento" vencimento={vencimento} />;
-      }
     }
   }
 

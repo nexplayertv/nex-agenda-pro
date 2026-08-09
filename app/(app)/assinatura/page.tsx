@@ -1,7 +1,10 @@
+import { MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthContext } from "@/lib/permissions/auth-context";
+import { whatsappLink } from "@/lib/mensagens/template";
 import { createClient } from "@/lib/supabase/server";
 import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
 import { DocumentoForm } from "@/components/assinatura/documento-form";
@@ -24,7 +27,7 @@ export default async function AssinaturaPage() {
   const [{ data: empresa }, { data: plano }] = await Promise.all([
     supabase
       .from("empresas")
-      .select("status_assinatura, trial_expira_em, cnpj_cpf, nome_completo")
+      .select("status_assinatura, trial_expira_em, cnpj_cpf, nome_completo, ativa")
       .eq("id", ctx.empresaId)
       .single(),
     supabase.from("planos_saas").select("nome, valor_mensal").eq("ativo", true).single(),
@@ -35,6 +38,50 @@ export default async function AssinaturaPage() {
     ? Math.ceil((vencimento.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : null;
   const statusMeta = empresa ? STATUS_META[empresa.status_assinatura] : undefined;
+
+  if (empresa && !empresa.ativa) {
+    const { data: config } = await supabase
+      .from("configuracoes_plataforma")
+      .select("whatsapp_suporte")
+      .eq("id", 1)
+      .single();
+
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title="Plano e renovação"
+          description="Detalhes da sua assinatura AgendaPro e status de pagamento."
+        />
+        <Card>
+          <CardContent className="space-y-4 py-6 text-center">
+            <Badge className="bg-destructive/15 text-destructive">Acesso suspenso</Badge>
+            <p className="text-sm text-muted-foreground">
+              O acesso da sua empresa foi suspenso pelo administrador da plataforma. Renovar o
+              pagamento não reativa sozinho — entre em contato com o suporte para mais
+              informações.
+            </p>
+            {config?.whatsapp_suporte && (
+              <Button
+                render={
+                  <a
+                    href={whatsappLink(
+                      config.whatsapp_suporte,
+                      "Olá! Meu acesso ao AgendaPro foi suspenso e preciso de ajuda."
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle />
+                    Falar com o suporte
+                  </a>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

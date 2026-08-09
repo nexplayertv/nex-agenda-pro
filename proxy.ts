@@ -10,6 +10,35 @@ function isPublicPath(pathname: string) {
   );
 }
 
+// Paginas do (app) - tenant - onde vale a pena checar assinatura/acesso.
+// Nao inclui /assinatura de proposito: e o destino do redirecionamento, e
+// nao pode redirecionar pra si mesma. Superadmin ((superadmin)) fica de
+// fora por completo - superadmin nunca e bloqueado.
+const ROTAS_TENANT_PROTEGIDAS = [
+  "/dashboard",
+  "/agenda",
+  "/agendamentos",
+  "/clientes",
+  "/servicos",
+  "/profissionais",
+  "/funcionarios",
+  "/pagamentos-entrada",
+  "/gateways",
+  "/financeiro",
+  "/comissoes",
+  "/catalogo",
+  "/mensagens",
+  "/notificacoes",
+  "/relatorios",
+  "/configuracoes",
+];
+
+function isRotaTenantProtegida(pathname: string) {
+  return ROTAS_TENANT_PROTEGIDAS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+
 /**
  * Renova a sessao Supabase a cada request e bloqueia acesso as areas
  * autenticadas ((app) e (superadmin)) para quem nao tem sessao valida.
@@ -60,6 +89,38 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  if (user && isRotaTenantProtegida(pathname)) {
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("tipo")
+      .eq("id", user.id)
+      .single();
+
+    if (usuario?.tipo !== "superadmin") {
+      const { data: usuarioEmpresa } = await supabase
+        .from("usuarios_empresas")
+        .select("empresas(trial_expira_em, ativa)")
+        .eq("usuario_id", user.id)
+        .eq("status", "ativo")
+        .maybeSingle();
+
+      const empresa = usuarioEmpresa?.empresas as unknown as
+        | { trial_expira_em: string | null; ativa: boolean }
+        | null;
+
+      const vencido = empresa?.trial_expira_em
+        ? new Date(empresa.trial_expira_em).getTime() < Date.now()
+        : false;
+
+      if (empresa && (!empresa.ativa || vencido)) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/assinatura";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return response;
