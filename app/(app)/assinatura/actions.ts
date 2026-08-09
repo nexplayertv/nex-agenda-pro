@@ -28,10 +28,15 @@ export async function salvarDocumentoEmpresa(
     return { error: "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido." };
   }
 
+  const nomeCompleto = String(formData.get("nomeCompleto") ?? "").trim();
+  if (!nomeCompleto) {
+    return { error: "Informe o nome completo." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("empresas")
-    .update({ cnpj_cpf: cnpjCpf })
+    .update({ cnpj_cpf: cnpjCpf, nome_completo: nomeCompleto })
     .eq("id", ctx.empresaId);
 
   if (error) return { error: "Não foi possível salvar." };
@@ -73,7 +78,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
   const supabase = await createClient();
 
   const [{ data: empresa }, { data: plano }, { data: assinatura }] = await Promise.all([
-    supabase.from("empresas").select("nome, cnpj_cpf").eq("id", ctx.empresaId).single(),
+    supabase.from("empresas").select("nome, nome_completo, cnpj_cpf").eq("id", ctx.empresaId).single(),
     supabase.from("planos_saas").select("id, valor_mensal").eq("ativo", true).single(),
     supabase
       .from("assinaturas_saas")
@@ -85,9 +90,10 @@ export async function renovarAssinatura(): Promise<RenovarState> {
   ]);
 
   if (!empresa || !plano) return { error: "Não foi possível carregar os dados do plano." };
-  if (!empresa.cnpj_cpf) {
+  if (!empresa.cnpj_cpf || !empresa.nome_completo) {
     return {
-      error: "Preencha o CPF ou CNPJ da empresa abaixo antes de renovar - o gateway exige esse dado.",
+      error:
+        "Preencha o nome completo e o CPF ou CNPJ da empresa abaixo antes de renovar - o gateway exige esses dados.",
     };
   }
 
@@ -119,7 +125,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
     const cobranca = await gateway.criarCobranca({
       valor: Number(plano.valor_mensal),
       descricao: `Assinatura AgendaPro - ${empresa.nome}`,
-      clienteNome: empresa.nome,
+      clienteNome: empresa.nome_completo,
       clienteEmail: ctx.email,
       clienteCpfCnpj: empresa.cnpj_cpf,
       referenciaExterna: `assinatura:${ctx.empresaId}`,

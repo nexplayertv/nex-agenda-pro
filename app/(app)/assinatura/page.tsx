@@ -24,7 +24,7 @@ export default async function AssinaturaPage() {
   const [{ data: empresa }, { data: plano }] = await Promise.all([
     supabase
       .from("empresas")
-      .select("status_assinatura, trial_expira_em, cnpj_cpf")
+      .select("status_assinatura, trial_expira_em, cnpj_cpf, nome_completo")
       .eq("id", ctx.empresaId)
       .single(),
     supabase.from("planos_saas").select("nome, valor_mensal").eq("ativo", true).single(),
@@ -81,7 +81,10 @@ export default async function AssinaturaPage() {
             pagamento. Você pode renovar a qualquer momento, mesmo antes do vencimento.
           </p>
 
-          <DocumentoForm cnpjCpf={empresa?.cnpj_cpf ?? null} />
+          <DocumentoForm
+            nomeCompleto={empresa?.nome_completo ?? null}
+            cnpjCpf={empresa?.cnpj_cpf ?? null}
+          />
 
           <RenovarAssinaturaButton />
         </CardContent>
