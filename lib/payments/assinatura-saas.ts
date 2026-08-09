@@ -12,7 +12,22 @@ export async function confirmarPagamentoSaas(
   assinaturaId: string,
   empresaId: string
 ) {
-  const novoVencimento = new Date(Date.now() + 30 * 86_400_000).toISOString();
+  // Empilha a partir do vencimento atual quando ele ainda nao passou (ex.:
+  // renovacao antecipada, antes do vencimento), em vez de sempre resetar
+  // pra "hoje + 30 dias" - senao renovar cedo desperdicaria os dias que
+  // ja tinham sido pagos e ainda nao foram usados.
+  const { data: empresaAtual } = await supabase
+    .from("empresas")
+    .select("trial_expira_em")
+    .eq("id", empresaId)
+    .single();
+
+  const agora = Date.now();
+  const vencimentoAtual = empresaAtual?.trial_expira_em
+    ? new Date(empresaAtual.trial_expira_em).getTime()
+    : agora;
+  const baseRenovacao = Math.max(agora, vencimentoAtual);
+  const novoVencimento = new Date(baseRenovacao + 30 * 86_400_000).toISOString();
 
   await supabase
     .from("pagamentos_saas")
