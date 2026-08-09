@@ -42,7 +42,7 @@ export function EditarVencimentoDialog({
 
   return (
     <>
-      <DropdownMenuItem onClick={() => setOpen(true)}>
+      <DropdownMenuItem onClick={() => setTimeout(() => setOpen(true), 0)}>
         <Pencil />
         Editar vencimento
       </DropdownMenuItem>

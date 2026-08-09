@@ -49,7 +49,7 @@ export function RedefinirSenhaAdminDialog({
 
   return (
     <>
-      <DropdownMenuItem onClick={() => setOpen(true)}>
+      <DropdownMenuItem onClick={() => setTimeout(() => setOpen(true), 0)}>
         <KeyRound />
         Redefinir senha do admin
       </DropdownMenuItem>
