@@ -118,15 +118,7 @@ export async function excluirCliente(clienteId: string): Promise<{ error: string
     .eq("id", clienteId)
     .eq("empresa_id", ctx.empresaId);
 
-  if (error) {
-    if (error.code === "23503") {
-      return {
-        error:
-          "Este cliente tem agendamentos ou mensagens registradas e não pode ser excluído. Desative-o em vez disso.",
-      };
-    }
-    return { error: "Não foi possível excluir o cliente." };
-  }
+  if (error) return { error: "Não foi possível excluir o cliente." };
 
   await registrarAtividade({
     empresaId: ctx.empresaId,

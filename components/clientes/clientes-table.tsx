@@ -122,9 +122,9 @@ export function ClientesTable({ clientes }: { clientes: ClienteLinha[] }) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir {cliente.nome}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Essa ação não pode ser desfeita. Se o cliente já tiver agendamentos ou
-                    mensagens registradas, a exclusão será bloqueada — nesse caso, use
-                    &quot;Desativar&quot; em vez de excluir.
+                    Essa ação não pode ser desfeita. O cadastro do cliente será apagado
+                    definitivamente. Agendamentos e mensagens antigas ligadas a ele são mantidos
+                    no histórico, só deixam de mostrar o nome do cliente.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
