@@ -51,7 +51,14 @@ export async function renovarAssinatura(): Promise<RenovarState> {
     assinaturaId = novaAssinatura.id;
   }
 
-  const gateway = new AsaasGateway(apiKey);
+  // Sem UI de ambiente aqui (so existe uma conta, a da propria plataforma) -
+  // usa producao por padrao; ASAAS_PLATFORM_SANDBOX=true muda pra sandbox
+  // durante testes.
+  const baseUrl =
+    process.env.ASAAS_PLATFORM_SANDBOX === "true"
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+  const gateway = new AsaasGateway(apiKey, baseUrl);
 
   try {
     const cobranca = await gateway.criarCobranca({
