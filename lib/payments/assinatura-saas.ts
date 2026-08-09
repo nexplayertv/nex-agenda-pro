@@ -43,9 +43,12 @@ export async function confirmarPagamentoSaas(
     })
     .eq("id", assinaturaId);
 
+  // "ativa" NAO e tocada aqui de proposito: e um interruptor administrativo
+  // independente do superadmin (ver empresas/actions.ts), pagamento nao deve
+  // reverter uma suspensao manual.
   await supabase
     .from("empresas")
-    .update({ status_assinatura: "ativa", trial_expira_em: novoVencimento, ativa: true })
+    .update({ status_assinatura: "ativa", trial_expira_em: novoVencimento })
     .eq("id", empresaId);
 }
 

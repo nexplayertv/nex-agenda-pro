@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const [{ data: empresa }, { data: notificacoesData }, { count }] = await Promise.all([
       supabase
         .from("empresas")
-        .select("nome, trial_expira_em")
+        .select("nome, trial_expira_em, ativa")
         .eq("id", ctx.empresaId)
         .single(),
       supabase
@@ -53,13 +53,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     naoLidas = count ?? 0;
     vencimento = empresa?.trial_expira_em ?? null;
 
+    if (empresa && !empresa.ativa && !ctx.isSuperadmin) {
+      return <AcessoBloqueado motivo="suspenso" />;
+    }
+
     if (vencimento) {
       diasRestantes = Math.ceil(
         (new Date(vencimento).getTime() - new Date().getTime()) / 86_400_000
       );
 
       if (diasRestantes < 0 && !ctx.isSuperadmin) {
-        return <AcessoBloqueado vencimento={vencimento} />;
+        return <AcessoBloqueado motivo="vencimento" vencimento={vencimento} />;
       }
     }
   }

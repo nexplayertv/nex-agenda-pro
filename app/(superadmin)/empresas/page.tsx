@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { formatarData } from "@/lib/utils-domain/masks";
+import { EmpresaAcoes } from "@/components/superadmin/empresa-acoes";
 
 type EmpresaLinha = {
   id: string;
@@ -69,6 +70,7 @@ export default async function EmpresasSuperadminPage() {
                 <TableHead>Vencimento</TableHead>
                 <TableHead>Acesso</TableHead>
                 <TableHead>Cadastrada em</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -98,6 +100,13 @@ export default async function EmpresasSuperadminPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>{formatarData(empresa.created_at)}</TableCell>
+                    <TableCell>
+                      <EmpresaAcoes
+                        empresaId={empresa.id}
+                        nome={empresa.nome}
+                        ativa={empresa.ativa}
+                      />
+                    </TableCell>
                   </TableRow>
                 );
               })}
