@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getAuthContext } from "@/lib/permissions/auth-context";
+import { requirePermission } from "@/lib/permissions/require-permission";
 import { AsaasGateway } from "@/lib/payments/asaas";
 import { descriptografarCredenciais } from "@/lib/payments/credentials";
 import type { PaymentGateway } from "@/lib/payments/gateway";
@@ -10,6 +12,33 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type RenovarState = { error: string | null; urlPagamento?: string };
+export type DocumentoState = { error: string | null; sucesso?: boolean };
+
+export async function salvarDocumentoEmpresa(
+  _prev: DocumentoState,
+  formData: FormData
+): Promise<DocumentoState> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "configuracoes", "editar");
+
+  const cnpjCpf = String(formData.get("cnpjCpf") ?? "").replace(/\D/g, "");
+  if (cnpjCpf.length !== 11 && cnpjCpf.length !== 14) {
+    return { error: "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("empresas")
+    .update({ cnpj_cpf: cnpjCpf })
+    .eq("id", ctx.empresaId);
+
+  if (error) return { error: "Não foi possível salvar." };
+
+  revalidatePath("/assinatura");
+  return { error: null, sucesso: true };
+}
 
 function instanciarGateway(
   tipo: "asaas" | "stripe" | "mercadopago",
@@ -44,7 +73,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
   const supabase = await createClient();
 
   const [{ data: empresa }, { data: plano }, { data: assinatura }] = await Promise.all([
-    supabase.from("empresas").select("nome").eq("id", ctx.empresaId).single(),
+    supabase.from("empresas").select("nome, cnpj_cpf").eq("id", ctx.empresaId).single(),
     supabase.from("planos_saas").select("id, valor_mensal").eq("ativo", true).single(),
     supabase
       .from("assinaturas_saas")
@@ -56,6 +85,11 @@ export async function renovarAssinatura(): Promise<RenovarState> {
   ]);
 
   if (!empresa || !plano) return { error: "Não foi possível carregar os dados do plano." };
+  if (!empresa.cnpj_cpf) {
+    return {
+      error: "Preencha o CPF ou CNPJ da empresa abaixo antes de renovar - o gateway exige esse dado.",
+    };
+  }
 
   // assinaturas_saas/pagamentos_saas so aceitam escrita do superadmin via
   // RLS (ver 0011_rls_policies.sql) - aqui e o proprio tenant pagando a
@@ -87,6 +121,7 @@ export async function renovarAssinatura(): Promise<RenovarState> {
       descricao: `Assinatura AgendaPro - ${empresa.nome}`,
       clienteNome: empresa.nome,
       clienteEmail: ctx.email,
+      clienteCpfCnpj: empresa.cnpj_cpf,
       referenciaExterna: `assinatura:${ctx.empresaId}`,
       billingType: "UNDEFINED",
     });

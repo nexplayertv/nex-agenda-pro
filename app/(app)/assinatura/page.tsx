@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
 import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
+import { DocumentoForm } from "@/components/assinatura/documento-form";
 import { RenovarAssinaturaButton } from "@/components/assinatura/renovar-button";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
@@ -23,7 +24,7 @@ export default async function AssinaturaPage() {
   const [{ data: empresa }, { data: plano }] = await Promise.all([
     supabase
       .from("empresas")
-      .select("status_assinatura, trial_expira_em")
+      .select("status_assinatura, trial_expira_em, cnpj_cpf")
       .eq("id", ctx.empresaId)
       .single(),
     supabase.from("planos_saas").select("nome, valor_mensal").eq("ativo", true).single(),
@@ -79,6 +80,8 @@ export default async function AssinaturaPage() {
             A renovação garante mais 30 dias de acesso ao painel a partir da confirmação do
             pagamento. Você pode renovar a qualquer momento, mesmo antes do vencimento.
           </p>
+
+          <DocumentoForm cnpjCpf={empresa?.cnpj_cpf ?? null} />
 
           <RenovarAssinaturaButton />
         </CardContent>
