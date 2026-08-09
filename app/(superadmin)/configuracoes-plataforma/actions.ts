@@ -125,3 +125,30 @@ export async function desconectarGatewayPlataforma(tipo: GatewayPlataformaTipo):
 
   revalidatePath("/configuracoes-plataforma");
 }
+
+export async function salvarWhatsappSuporte(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    await exigirSuperadmin();
+  } catch {
+    return { error: "Acesso restrito." };
+  }
+
+  const whatsapp = String(formData.get("whatsapp") ?? "").replace(/\D/g, "");
+  if (whatsapp && whatsapp.length < 10) {
+    return { error: "Informe um número de WhatsApp válido, com DDD." };
+  }
+
+  const supabaseAdmin = createServiceClient();
+  const { error } = await supabaseAdmin
+    .from("configuracoes_plataforma")
+    .update({ whatsapp_suporte: whatsapp || null })
+    .eq("id", 1);
+
+  if (error) return { error: "Não foi possível salvar." };
+
+  revalidatePath("/configuracoes-plataforma");
+  return { error: null, sucesso: true };
+}

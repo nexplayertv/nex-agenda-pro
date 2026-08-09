@@ -1,4 +1,6 @@
-import { Lock } from "lucide-react";
+import { Lock, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { whatsappLink } from "@/lib/mensagens/template";
 import { formatarData } from "@/lib/utils-domain/masks";
 import { RenovarAssinaturaButton } from "@/components/assinatura/renovar-button";
 import { SairButton } from "@/components/layout/sair-button";
@@ -6,9 +8,11 @@ import { SairButton } from "@/components/layout/sair-button";
 export function AcessoBloqueado({
   motivo,
   vencimento,
+  whatsappSuporte,
 }: {
   motivo: "vencimento" | "suspenso";
   vencimento?: string;
+  whatsappSuporte?: string | null;
 }) {
   return (
     <div className="flex min-h-screen flex-col">
@@ -27,10 +31,28 @@ export function AcessoBloqueado({
             <RenovarAssinaturaButton size="lg" className="mt-2" />
           </>
         ) : (
-          <p className="max-w-sm text-sm text-muted-foreground">
-            O acesso da sua empresa foi suspenso pelo administrador da plataforma. Entre em
-            contato com o suporte para mais informações.
-          </p>
+          <>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              O acesso da sua empresa foi suspenso pelo administrador da plataforma. Entre em
+              contato com o suporte para mais informações.
+            </p>
+            {whatsappSuporte && (
+              <Button
+                size="lg"
+                className="mt-2"
+                render={
+                  <a
+                    href={whatsappLink(whatsappSuporte, "Olá! Meu acesso ao AgendaPro foi suspenso e preciso de ajuda.")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle />
+                    Falar com o suporte
+                  </a>
+                }
+              />
+            )}
+          </>
         )}
       </div>
     </div>

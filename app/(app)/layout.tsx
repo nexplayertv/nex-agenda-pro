@@ -54,7 +54,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     vencimento = empresa?.trial_expira_em ?? null;
 
     if (empresa && !empresa.ativa && !ctx.isSuperadmin) {
-      return <AcessoBloqueado motivo="suspenso" />;
+      const { data: config } = await supabase
+        .from("configuracoes_plataforma")
+        .select("whatsapp_suporte")
+        .eq("id", 1)
+        .single();
+      return <AcessoBloqueado motivo="suspenso" whatsappSuporte={config?.whatsapp_suporte} />;
     }
 
     if (vencimento) {
