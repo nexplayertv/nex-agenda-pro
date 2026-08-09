@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { whatsappLink } from "@/lib/mensagens/template";
 import { createClient } from "@/lib/supabase/server";
-import { formatarData, formatarMoeda } from "@/lib/utils-domain/masks";
+import { formatarData } from "@/lib/utils-domain/masks";
 import { DocumentoForm } from "@/components/assinatura/documento-form";
 import { RenovarAssinaturaButton } from "@/components/assinatura/renovar-button";
 
@@ -24,13 +24,18 @@ export default async function AssinaturaPage() {
   if (!ctx?.empresaId) return null;
 
   const supabase = await createClient();
-  const [{ data: empresa }, { data: plano }] = await Promise.all([
+  const [{ data: empresa }, { data: plano }, { data: ciclos }] = await Promise.all([
     supabase
       .from("empresas")
       .select("status_assinatura, trial_expira_em, cnpj_cpf, nome_completo, ativa")
       .eq("id", ctx.empresaId)
       .single(),
-    supabase.from("planos_saas").select("nome, valor_mensal").eq("ativo", true).single(),
+    supabase.from("planos_saas").select("nome").eq("ativo", true).single(),
+    supabase
+      .from("ciclos_cobranca_saas")
+      .select("id, nome, periodo_dias, valor")
+      .eq("ativo", true)
+      .order("periodo_dias", { ascending: true }),
   ]);
 
   const vencimento = empresa?.trial_expira_em ? new Date(empresa.trial_expira_em) : null;
@@ -100,13 +105,7 @@ export default async function AssinaturaPage() {
             {statusMeta && <Badge className={statusMeta.className}>{statusMeta.label}</Badge>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-            <div>
-              <p className="text-muted-foreground">Valor mensal</p>
-              <p className="font-medium">
-                {plano ? formatarMoeda(Number(plano.valor_mensal)) : "—"}
-              </p>
-            </div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Vencimento</p>
               <p className="font-medium">{vencimento ? formatarData(vencimento) : "—"}</p>
@@ -124,8 +123,9 @@ export default async function AssinaturaPage() {
           </div>
 
           <p className="text-sm text-muted-foreground">
-            A renovação garante mais 30 dias de acesso ao painel a partir da confirmação do
-            pagamento. Você pode renovar a qualquer momento, mesmo antes do vencimento.
+            Escolha o período abaixo — a renovação garante os dias correspondentes de acesso ao
+            painel a partir da confirmação do pagamento. Você pode renovar a qualquer momento,
+            mesmo antes do vencimento.
           </p>
 
           <DocumentoForm
@@ -133,7 +133,9 @@ export default async function AssinaturaPage() {
             cnpjCpf={empresa?.cnpj_cpf ?? null}
           />
 
-          <RenovarAssinaturaButton />
+          <RenovarAssinaturaButton
+            ciclos={(ciclos ?? []).map((c) => ({ ...c, valor: Number(c.valor) }))}
+          />
         </CardContent>
       </Card>
     </div>

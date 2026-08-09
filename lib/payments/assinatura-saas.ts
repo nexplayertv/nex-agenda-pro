@@ -14,20 +14,23 @@ export async function confirmarPagamentoSaas(
 ) {
   // Empilha a partir do vencimento atual quando ele ainda nao passou (ex.:
   // renovacao antecipada, antes do vencimento), em vez de sempre resetar
-  // pra "hoje + 30 dias" - senao renovar cedo desperdicaria os dias que
-  // ja tinham sido pagos e ainda nao foram usados.
-  const { data: empresaAtual } = await supabase
-    .from("empresas")
-    .select("trial_expira_em")
-    .eq("id", empresaId)
-    .single();
+  // pra "hoje + N dias" - senao renovar cedo desperdicaria os dias que
+  // ja tinham sido pagos e ainda nao foram usados. N vem de
+  // pagamentos_saas.periodo_dias, snapshot do ciclo escolhido na hora da
+  // cobranca (mensal=30, trimestral=90, etc.) - nao do ciclo atual, que
+  // pode ter mudado desde entao.
+  const [{ data: empresaAtual }, { data: pagamentoSaas }] = await Promise.all([
+    supabase.from("empresas").select("trial_expira_em").eq("id", empresaId).single(),
+    supabase.from("pagamentos_saas").select("periodo_dias").eq("id", pagamentoSaasId).single(),
+  ]);
 
+  const diasPeriodo = pagamentoSaas?.periodo_dias ?? 30;
   const agora = Date.now();
   const vencimentoAtual = empresaAtual?.trial_expira_em
     ? new Date(empresaAtual.trial_expira_em).getTime()
     : agora;
   const baseRenovacao = Math.max(agora, vencimentoAtual);
-  const novoVencimento = new Date(baseRenovacao + 30 * 86_400_000).toISOString();
+  const novoVencimento = new Date(baseRenovacao + diasPeriodo * 86_400_000).toISOString();
 
   await supabase
     .from("pagamentos_saas")

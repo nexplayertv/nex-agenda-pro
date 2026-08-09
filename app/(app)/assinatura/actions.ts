@@ -57,7 +57,7 @@ function instanciarGateway(
   return new MercadoPagoGateway(apiKey);
 }
 
-export async function renovarAssinatura(): Promise<RenovarState> {
+export async function renovarAssinatura(cicloId: string): Promise<RenovarState> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return { error: "Sessão inválida." };
 
@@ -77,19 +77,31 @@ export async function renovarAssinatura(): Promise<RenovarState> {
 
   const supabase = await createClient();
 
-  const [{ data: empresa }, { data: plano }, { data: assinatura }] = await Promise.all([
-    supabase.from("empresas").select("nome, nome_completo, cnpj_cpf").eq("id", ctx.empresaId).single(),
-    supabase.from("planos_saas").select("id, valor_mensal").eq("ativo", true).single(),
-    supabase
-      .from("assinaturas_saas")
-      .select("id")
-      .eq("empresa_id", ctx.empresaId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const [{ data: empresa }, { data: plano }, { data: assinatura }, { data: ciclo }] =
+    await Promise.all([
+      supabase
+        .from("empresas")
+        .select("nome, nome_completo, cnpj_cpf")
+        .eq("id", ctx.empresaId)
+        .single(),
+      supabase.from("planos_saas").select("id").eq("ativo", true).single(),
+      supabase
+        .from("assinaturas_saas")
+        .select("id")
+        .eq("empresa_id", ctx.empresaId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("ciclos_cobranca_saas")
+        .select("nome, valor, periodo_dias")
+        .eq("id", cicloId)
+        .eq("ativo", true)
+        .single(),
+    ]);
 
   if (!empresa || !plano) return { error: "Não foi possível carregar os dados do plano." };
+  if (!ciclo) return { error: "Ciclo de cobrança inválido. Atualize a página e tente de novo." };
   if (!empresa.cnpj_cpf || !empresa.nome_completo) {
     return {
       error:
@@ -123,8 +135,8 @@ export async function renovarAssinatura(): Promise<RenovarState> {
 
   try {
     const cobranca = await gateway.criarCobranca({
-      valor: Number(plano.valor_mensal),
-      descricao: `Assinatura AgendaPro - ${empresa.nome}`,
+      valor: Number(ciclo.valor),
+      descricao: `Assinatura AgendaPro (${ciclo.nome}) - ${empresa.nome}`,
       clienteNome: empresa.nome_completo,
       clienteEmail: ctx.email,
       clienteCpfCnpj: empresa.cnpj_cpf,
@@ -136,10 +148,11 @@ export async function renovarAssinatura(): Promise<RenovarState> {
     await supabaseAdmin.from("pagamentos_saas").insert({
       assinatura_id: assinaturaId,
       empresa_id: ctx.empresaId,
-      valor: Number(plano.valor_mensal),
+      valor: Number(ciclo.valor),
       status: "pendente",
       gateway: gatewayPlataforma.tipo,
       transacao_id: cobranca.transacaoId,
+      periodo_dias: ciclo.periodo_dias,
     });
 
     if (!cobranca.urlPagamento) {
