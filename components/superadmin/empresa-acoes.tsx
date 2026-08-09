@@ -28,15 +28,18 @@ import {
   excluirEmpresa,
   renovarManualmente,
 } from "@/app/(superadmin)/empresas/actions";
+import { EditarVencimentoDialog } from "./editar-vencimento-dialog";
 
 export function EmpresaAcoes({
   empresaId,
   nome,
   ativa,
+  vencimentoAtual,
 }: {
   empresaId: string;
   nome: string;
   ativa: boolean;
+  vencimentoAtual: string | null;
 }) {
   const [, startTransition] = useTransition();
   const [confirmacao, setConfirmacao] = useState("");
@@ -50,7 +53,7 @@ export function EmpresaAcoes({
           </Button>
         }
       />
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem
           onClick={() =>
             startTransition(async () => {
@@ -63,6 +66,7 @@ export function EmpresaAcoes({
           <CalendarPlus />
           Renovar +30 dias
         </DropdownMenuItem>
+        <EditarVencimentoDialog empresaId={empresaId} vencimentoAtual={vencimentoAtual} />
         <DropdownMenuItem
           variant={ativa ? "destructive" : "default"}
           onClick={() =>

@@ -53,6 +53,37 @@ export async function renovarManualmente(empresaId: string): Promise<ActionState
   return { error: null };
 }
 
+export async function definirVencimento(empresaId: string, novaData: string): Promise<ActionState> {
+  const ctx = await exigirSuperadmin().catch(() => null);
+  if (!ctx) return { error: "Acesso restrito." };
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(novaData)) {
+    return { error: "Data inválida." };
+  }
+
+  const novoVencimento = new Date(`${novaData}T23:59:59`).toISOString();
+
+  const { error } = await createServiceClient()
+    .from("empresas")
+    .update({ status_assinatura: "ativa", trial_expira_em: novoVencimento })
+    .eq("id", empresaId);
+
+  if (error) return { error: "Não foi possível salvar a data." };
+
+  await registrarAtividade({
+    empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: "superadmin",
+    acao: "editar_vencimento",
+    recurso: "empresas",
+    registroId: empresaId,
+    dadosNovos: { trial_expira_em: novoVencimento },
+  });
+
+  revalidatePath("/empresas");
+  return { error: null };
+}
+
 export async function alternarAtivaEmpresa(empresaId: string, ativa: boolean): Promise<ActionState> {
   const ctx = await exigirSuperadmin().catch(() => null);
   if (!ctx) return { error: "Acesso restrito." };

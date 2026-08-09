@@ -105,6 +105,7 @@ export default async function EmpresasSuperadminPage() {
                         empresaId={empresa.id}
                         nome={empresa.nome}
                         ativa={empresa.ativa}
+                        vencimentoAtual={empresa.trial_expira_em}
                       />
                     </TableCell>
                   </TableRow>
