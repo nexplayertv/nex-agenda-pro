@@ -13,10 +13,30 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCloseOnSuccess } from "@/hooks/use-close-on-success";
 import { registrarDespesa, registrarReceita, type ActionState } from "@/app/(app)/financeiro/actions";
 
 const initialState: ActionState = { error: null };
+
+const CATEGORIAS_DESPESA = [
+  "Aluguel",
+  "Produtos/Estoque",
+  "Salários/Comissões",
+  "Contas (água, luz, internet)",
+  "Marketing",
+  "Manutenção",
+  "Impostos",
+  "Outros",
+];
+
+const CATEGORIAS_RECEITA = ["Entrada de agendamento", "Venda avulsa", "Produto", "Outros"];
 
 export function LancamentoDialog({ tipo }: { tipo: "receita" | "despesa" }) {
   const [open, setOpen] = useState(false);
@@ -25,6 +45,7 @@ export function LancamentoDialog({ tipo }: { tipo: "receita" | "despesa" }) {
   useCloseOnSuccess(state, setOpen);
 
   const hoje = new Date().toISOString().slice(0, 10);
+  const categorias = tipo === "receita" ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -50,7 +71,18 @@ export function LancamentoDialog({ tipo }: { tipo: "receita" | "despesa" }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="categoria">Categoria</Label>
-              <Input id="categoria" name="categoria" />
+              <Select items={Object.fromEntries(categorias.map((c) => [c, c]))} name="categoria">
+                <SelectTrigger id="categoria" className="w-full">
+                  <SelectValue placeholder="Selecione (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
