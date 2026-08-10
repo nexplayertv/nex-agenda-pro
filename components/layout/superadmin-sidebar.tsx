@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
-  CreditCard,
   LayoutDashboard,
   Package,
   Settings,
@@ -26,7 +25,6 @@ import {
 const SUPERADMIN_NAV = [
   { href: "/empresas", label: "Empresas", icon: Building2 },
   { href: "/planos", label: "Planos do SaaS", icon: Package },
-  { href: "/assinaturas", label: "Assinaturas", icon: CreditCard },
   { href: "/usuarios", label: "Usuários", icon: Users },
   { href: "/financeiro-saas", label: "Financeiro do SaaS", icon: Wallet },
   { href: "/configuracoes-plataforma", label: "Configurações da plataforma", icon: Settings },
