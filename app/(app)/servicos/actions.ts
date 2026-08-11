@@ -173,6 +173,52 @@ export async function criarCategoria(nome: string): Promise<{ id: string } | { e
   return { id: data.id };
 }
 
+export async function editarCategoria(
+  categoriaId: string,
+  nome: string
+): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  const parsed = categoriaSchema.safeParse({ nome });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Nome inválido." };
+
+  await requirePermission(ctx.empresaId, "servicos", "editar");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("categorias_servicos")
+    .update({ nome: parsed.data.nome })
+    .eq("id", categoriaId)
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) return { error: "Não foi possível renomear a categoria." };
+
+  revalidatePath("/servicos");
+  return { error: null };
+}
+
+export async function excluirCategoria(categoriaId: string): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "servicos", "excluir");
+
+  const supabase = await createClient();
+  // categoria_id em servicos usa "on delete set null" - excluir uma
+  // categoria em uso nao apaga os servicos, so tira a categoria deles.
+  const { error } = await supabase
+    .from("categorias_servicos")
+    .delete()
+    .eq("id", categoriaId)
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) return { error: "Não foi possível excluir a categoria." };
+
+  revalidatePath("/servicos");
+  return { error: null };
+}
+
 export async function salvarProfissionaisServico(
   servicoId: string,
   profissionalIds: string[]

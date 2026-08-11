@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,7 +28,9 @@ import { ProfissionaisHabilitadosEditor } from "@/components/servicos/profission
 import {
   criarCategoria,
   criarServico,
+  editarCategoria,
   editarServico,
+  excluirCategoria,
   type ActionState,
 } from "@/app/(app)/servicos/actions";
 
@@ -84,6 +86,40 @@ export function ServicoFormDialog({
     });
   }
 
+  function editarCategoriaSelecionada() {
+    const atual = listaCategorias.find((c) => c.id === categoriaId);
+    if (!atual) return;
+    const novoNome = window.prompt("Novo nome da categoria", atual.nome);
+    if (!novoNome || !novoNome.trim() || novoNome.trim() === atual.nome) return;
+    startTransition(async () => {
+      const resultado = await editarCategoria(categoriaId, novoNome.trim());
+      if (!resultado.error) {
+        setListaCategorias((prev) =>
+          prev.map((c) => (c.id === categoriaId ? { ...c, nome: novoNome.trim() } : c))
+        );
+      }
+    });
+  }
+
+  function excluirCategoriaSelecionada() {
+    const atual = listaCategorias.find((c) => c.id === categoriaId);
+    if (!atual) return;
+    if (
+      !window.confirm(
+        `Excluir a categoria "${atual.nome}"? Serviços que usam ela ficam sem categoria.`
+      )
+    ) {
+      return;
+    }
+    startTransition(async () => {
+      const resultado = await excluirCategoria(categoriaId);
+      if (!resultado.error) {
+        setListaCategorias((prev) => prev.filter((c) => c.id !== categoriaId));
+        setCategoriaId("");
+      }
+    });
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? (
@@ -133,6 +169,24 @@ export function ServicoFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={!categoriaId}
+                  onClick={editarCategoriaSelecionada}
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={!categoriaId}
+                  onClick={excluirCategoriaSelecionada}
+                >
+                  <Trash2 />
+                </Button>
               </div>
               <div className="flex gap-2">
                 <Input
