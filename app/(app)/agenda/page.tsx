@@ -7,6 +7,7 @@ import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
 import { AgendaToolbar } from "@/components/agenda/agenda-toolbar";
 import { AgendaView } from "@/components/agenda/agenda-view";
+import { CopiarLinkAgendamentoButton } from "@/components/agenda/copiar-link-agendamento-button";
 import { MensagensHojeDialog } from "@/components/agenda/mensagens-hoje-dialog";
 import type { AgendamentoAgenda } from "@/components/agenda/types";
 
@@ -77,7 +78,7 @@ export default async function AgendaPage({
         .eq("empresa_id", ctx.empresaId)
         .eq("status", "ativo")
         .order("nome"),
-      supabase.from("empresas").select("nome").eq("id", ctx.empresaId).single(),
+      supabase.from("empresas").select("nome, slug").eq("id", ctx.empresaId).single(),
       supabase
         .from("configuracoes_empresas")
         .select("whatsapp, endereco")
@@ -130,6 +131,7 @@ export default async function AgendaPage({
         description="Todos os agendamentos da sua empresa, por dia, semana, mês ou lista."
         actions={
           <div className="flex gap-2">
+            {empresa?.slug && <CopiarLinkAgendamentoButton slug={empresa.slug} />}
             <MensagensHojeDialog
               agendamentosHoje={agendamentosHoje}
               templates={templates}
