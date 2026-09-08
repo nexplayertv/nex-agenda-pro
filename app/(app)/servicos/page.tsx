@@ -2,8 +2,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Can } from "@/hooks/use-permissions";
 import { getAuthContext } from "@/lib/permissions/auth-context";
 import { createClient } from "@/lib/supabase/server";
-import { ServicoFormDialog } from "@/components/servicos/servico-form-dialog";
-import { ServicosTable, type ServicoLinha } from "@/components/servicos/servicos-table";
+import { ServicoFormDialog, type ServicoLinha } from "@/components/servicos/servico-form-dialog";
+import { ServicosTable } from "@/components/servicos/servicos-table";
 
 export default async function ServicosPage() {
   const ctx = await getAuthContext();

@@ -151,6 +151,57 @@ export async function alternarStatusServico(servicoId: string, ativo: boolean): 
   revalidatePath("/servicos");
 }
 
+export async function excluirServico(servicoId: string): Promise<{ error: string | null }> {
+  const ctx = await getAuthContext();
+  if (!ctx?.empresaId) return { error: "Sessão inválida." };
+
+  await requirePermission(ctx.empresaId, "servicos", "excluir");
+
+  const supabase = await createClient();
+
+  const { data: servico } = await supabase
+    .from("servicos")
+    .select("status")
+    .eq("id", servicoId)
+    .eq("empresa_id", ctx.empresaId)
+    .single();
+
+  if (!servico) return { error: "Serviço não encontrado." };
+  if (servico.status !== "inativo") {
+    return { error: "Desative o serviço antes de excluir." };
+  }
+
+  const { error } = await supabase
+    .from("servicos")
+    .delete()
+    .eq("id", servicoId)
+    .eq("empresa_id", ctx.empresaId);
+
+  if (error) {
+    // agendamentos.servico_id nao tem cascade/set null - servico com
+    // historico de agendamento nao pode ser excluido.
+    if (error.code === "23503") {
+      return {
+        error:
+          "Este serviço tem agendamentos no histórico e não pode ser excluído. Como já está desativado, ele não aparece mais para novos agendamentos.",
+      };
+    }
+    return { error: "Não foi possível excluir o serviço." };
+  }
+
+  await registrarAtividade({
+    empresaId: ctx.empresaId,
+    usuarioId: ctx.userId,
+    cargoNome: ctx.cargoNome,
+    acao: "excluir",
+    recurso: "servicos",
+    registroId: servicoId,
+  });
+
+  revalidatePath("/servicos");
+  return { error: null };
+}
+
 export async function criarCategoria(nome: string): Promise<{ id: string } | { error: string }> {
   const ctx = await getAuthContext();
   if (!ctx?.empresaId) return { error: "Sessão inválida." };

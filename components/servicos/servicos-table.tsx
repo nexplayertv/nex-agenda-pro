@@ -1,16 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
 import Image from "next/image";
-import { MoreHorizontal, Pencil, Star, EyeOff, Power } from "lucide-react";
+import { Star, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -19,20 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Can } from "@/hooks/use-permissions";
 import { formatarDuracao, formatarMoeda } from "@/lib/utils-domain/masks";
-import { alternarStatusServico } from "@/app/(app)/servicos/actions";
-import {
-  ServicoFormDialog,
-  type CategoriaOpcao,
-  type ServicoExistente,
-} from "./servico-form-dialog";
-
-export type ServicoLinha = ServicoExistente & {
-  status: "ativo" | "inativo";
-  categorias_servicos: { nome: string } | null;
-  profissionais_servicos: { profissional_id: string }[];
-};
+import { ServicoAcoes } from "./servico-acoes";
+import type { CategoriaOpcao, ServicoLinha } from "./servico-form-dialog";
 
 export function ServicosTable({
   servicos,
@@ -43,54 +24,8 @@ export function ServicosTable({
   categorias: CategoriaOpcao[];
   profissionais: { id: string; nome: string }[];
 }) {
-  const [, startTransition] = useTransition();
-
   function acoes(servico: ServicoLinha) {
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="ghost" size="icon-sm">
-              <MoreHorizontal />
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="end">
-          <Can recurso="servicos" acao="editar">
-            <ServicoFormDialog
-              servico={{
-                ...servico,
-                profissionaisIds: servico.profissionais_servicos.map((p) => p.profissional_id),
-              }}
-              categorias={categorias}
-              profissionais={profissionais}
-              trigger={
-                <DropdownMenuItem
-                  closeOnClick={false}
-                  render={
-                    <button type="button" className="w-full">
-                      <Pencil />
-                      Editar
-                    </button>
-                  }
-                />
-              }
-            />
-          </Can>
-          <Can recurso="servicos" acao="excluir">
-            <DropdownMenuItem
-              variant={servico.status === "ativo" ? "destructive" : "default"}
-              onClick={() =>
-                startTransition(() => alternarStatusServico(servico.id, servico.status !== "ativo"))
-              }
-            >
-              <Power />
-              {servico.status === "ativo" ? "Desativar" : "Reativar"}
-            </DropdownMenuItem>
-          </Can>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
+    return <ServicoAcoes servico={servico} categorias={categorias} profissionais={profissionais} />;
   }
 
   if (servicos.length === 0) {

@@ -51,6 +51,12 @@ export type ServicoExistente = {
   profissionaisIds?: string[];
 };
 
+export type ServicoLinha = ServicoExistente & {
+  status: "ativo" | "inativo";
+  categorias_servicos: { nome: string } | null;
+  profissionais_servicos: { profissional_id: string }[];
+};
+
 const initialState: ActionState = { error: null };
 
 export function ServicoFormDialog({
@@ -58,13 +64,24 @@ export function ServicoFormDialog({
   categorias,
   profissionais,
   trigger,
+  open: openControlado,
+  onOpenChange: setOpenControlado,
 }: {
   servico?: ServicoExistente;
   categorias: CategoriaOpcao[];
   profissionais: { id: string; nome: string }[];
   trigger?: React.ReactNode;
+  // Modo controlado (ver servico-acoes.tsx): o Dialog precisa ficar fora
+  // da arvore do DropdownMenu que o abre, senao ele e desmontado junto
+  // quando o menu fecha - por isso o trigger nao pode ser um
+  // DialogTrigger aninhado dentro do proprio menu nesse caso.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openInterno, setOpenInterno] = useState(false);
+  const controlado = openControlado !== undefined && setOpenControlado !== undefined;
+  const open = controlado ? openControlado : openInterno;
+  const setOpen = controlado ? setOpenControlado : setOpenInterno;
   const [listaCategorias, setListaCategorias] = useState(categorias);
   const [categoriaId, setCategoriaId] = useState(servico?.categoria_id ?? "");
   const [novaCategoria, setNovaCategoria] = useState("");
@@ -122,7 +139,7 @@ export function ServicoFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {trigger ? (
+      {controlado ? null : trigger ? (
         <DialogTrigger render={trigger as React.ReactElement} />
       ) : (
         <DialogTrigger
